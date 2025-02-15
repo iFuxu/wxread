@@ -23,13 +23,13 @@ curl_str = os.getenv('WXREAD_CURL_BASH')
 
 # headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
-    'RK': 'oxEY1bTnXf',
-    'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',
+    'RK': 'vmX8clge/x',
+    'ptcz': 'c01d5992c35600d73383c3ce7b24de872094ca25feec03850f9eebe6c855dc52',
     'pac_uid': '0_e63870bcecc18',
     'iip': '0',
     '_qimei_uuid42': '183070d3135100ee797b08bc922054dc3062834291',
-    'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FeEOpSbFh2Mb1bUxMW9Y3FRPfXwWvOLaNlsjWIkcKeeNg6vlVS5kOVuhNKGQ1M8zaggLqMPmpE5qIUdqEXlQgYg%2F132',
-    'wr_gender': '0',
+    'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FPiajxSqBRaEJdVfGhThPvDQjJDgCZpicUkkooVfaATOjc1vM7FiamhmXBtJZbQceGS667NWNwThO5XkBJ7rMAVIGZ1U4FCUmNpLq575XOUtjTmBrGjrEwBnRw%2F132',
+    'wr_gender': '1',
 }
 
 headers = {
