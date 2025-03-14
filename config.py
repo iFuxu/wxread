@@ -90,8 +90,11 @@ def convert(curl_command):
         while i < len(parts):
             if parts[i] == '-H':
                 header = parts[i + 1].strip("'")
-                key, value = header.split(':', 1)
-                headers_temp[key] = value.strip()
+                try:
+                    key, value = header.split(':', 1)
+                    headers_temp[key] = value.strip()
+                except:
+                    logger.error(f"解析header时出错: {header}")
                 i += 2
             elif parts[i] == '-b':
                 cookie_str = parts[i + 1].strip("'")
@@ -106,6 +109,9 @@ def convert(curl_command):
         # 合并并更新全局的headers和cookies
         headers.update(headers_temp)
         cookies.update(cookies_temp)
+
+        logger.info(f"最终提取的headers: {headers}")
+        logger.info(f"最终提取的cookies: {cookies}")
 
         return headers, cookies
     except re.error as e:
@@ -125,4 +131,3 @@ if curl_str:
     logger.info("提取后的cookies: %s", cookies)
 else:
     logger.warning("未获取到WXREAD_CURL_BASH，使用默认的headers和cookies")
-
