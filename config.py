@@ -1,49 +1,98 @@
 # config.py 自定义配置,包括阅读次数、推送token的填写
 import os
 import re
-import random
-from dotenv import load_dotenv
 
-load_dotenv()
+"""
+可修改区域
+默认使用本地值如果不存在从环境变量中获取值
+"""
 
-# ================= 核心配置 =================
-def load_env_or_raise(key):
-    """强制要求的环境变量加载"""
-    value = os.getenv(key)
-    if not value:
-        raise ValueError(f"必须配置环境变量 {key}")
-    return value
+# 阅读次数 默认120次/60分钟
+READ_NUM = int(os.getenv('READ_NUM') or 120)
+# 需要推送时可选，可选pushplus、wxpusher、telegram
+PUSH_METHOD = "" or os.getenv('PUSH_METHOD')
+# pushplus推送时需填
+PUSHPLUS_TOKEN = "" or os.getenv("PUSHPLUS_TOKEN")
+# telegram推送时需填
+TELEGRAM_BOT_TOKEN = "" or os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = "" or os.getenv("TELEGRAM_CHAT_ID")
+# wxpusher推送时需填
+WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
+# read接口的bash命令，本地部署时可对应替换headers、cookies
+curl_str = os.getenv('WXREAD_CURL_BASH')
 
-# 书籍ID列表（必须通过环境变量配置）
-try:
-    b_values = [bid.strip() for bid in load_env_or_raise('B_VALUES').split(',')]
-    print(f"[CONFIG] 已加载 {len(b_values)} 个书籍ID")
-except ValueError as e:
-    # 兼容旧版curl解析逻辑
-    curl_str = os.getenv('WXREAD_CURL_BASH')
-    if curl_str:
-        match = re.search(r"-H 'b: ([^']+)'", curl_str)
-        if match:
-            b_values = [match.group(1)]
-            print(f"[CONFIG] 从curl命令解析到书籍ID: {b_values[0]}")
-    else:
-        raise
-
-# ================= 推送配置 =================
-PUSH_CONFIG = {
-    "method": os.getenv('PUSH_METHOD'),
-    "pushplus": os.getenv('PUSHPLUS_TOKEN'),
-    "telegram": {
-        "bot_token": os.getenv('TELEGRAM_BOT_TOKEN'),
-        "chat_id": os.getenv('TELEGRAM_CHAT_ID')
-    },
-    "wxpusher": os.getenv('WXPUSHER_SPT')
+# headers、cookies是一个省略模版，本地或者docker部署时对应替换
+cookies = {
+    'RK': 'oxEY1bTnXf',
+    'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',
+    'pac_uid': '0_e63870bcecc18',
+    'iip': '0',
+    '_qimei_uuid42': '183070d3135100ee797b08bc922054dc3062834291',
+    'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FeEOpSbFh2Mb1bUxMW9Y3FRPfXwWvOLaNlsjWIkcKeeNg6vlVS5kOVuhNKGQ1M8zaggLqMPmpE5qIUdqEXlQgYg%2F132',
+    'wr_gender': '0',
 }
 
-# ================= 执行参数 =================
-RUN_PARAMS = {
-    "read_num": int(os.getenv('READ_NUM', 180)),  # 默认180次/90分钟
-    "interval": random.randint(28, 32)            # 28-32秒随机间隔
+headers = {
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ko;q=0.5',
+    'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
 }
 
-print(f"[CONFIG] 运行参数: {RUN_PARAMS}")
+
+"""
+建议保留区域|默认读三体，其它书籍自行测试时间是否增加
+"""
+data = {
+    "appId": "wb182564874663h776775553",
+    "b": "f623242072a191daf6294db",
+    "c": "17c32d00329e17c276c8288",
+    "ci": 137,
+    "co": 7098,
+    "sm": "其实领导也挺不好当的。”我笑了笑，说",
+    "pr": 55,
+    "rt": 30,
+    "ts": 1739673850629,
+    "rn": 412,
+    "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8",
+    "ct": 1739673850,
+    "ps": "ca5326207a5e8814g01704b",
+    "pc": "f2332e707a5e8814g0181e0",
+}
+
+
+def convert(curl_command):
+    """提取bash接口中的headers与cookies
+    支持 -H 'Cookie: xxx' 和 -b 'xxx' 两种方式的cookie提取
+    """
+    # 提取 headers
+    headers_temp = {}
+    for match in re.findall(r"-H '([^:]+): ([^']+)'", curl_command):
+        headers_temp[match[0]] = match[1]
+
+    # 提取 cookies
+    cookies = {}
+
+    # 从 -H 'Cookie: xxx' 提取
+    cookie_header = next((v for k, v in headers_temp.items() 
+                         if k.lower() == 'cookie'), '')
+
+    # 从 -b 'xxx' 提取
+    cookie_b = re.search(r"-b '([^']+)'", curl_command)
+    cookie_string = cookie_b.group(1) if cookie_b else cookie_header
+
+    # 解析 cookie 字符串
+    if cookie_string:
+        for cookie in cookie_string.split('; '):
+            if '=' in cookie:
+                key, value = cookie.split('=', 1)
+                cookies[key.strip()] = value.strip()
+
+    # 移除 headers 中的 Cookie/cookie
+    headers = {k: v for k, v in headers_temp.items() 
+              if k.lower() != 'cookie'}
+
+    return headers, cookies
+
+
+headers, cookies = convert(curl_str) if curl_str else (headers, cookies)
