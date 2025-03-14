@@ -3,8 +3,13 @@ import os
 import re
 import logging
 
-# 配置日志格式
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)-8s - %(message)s')
+# 配置日志格式，增加日期时间的详细程度
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d - %(levelname)-8s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 """
 可修改区域
@@ -12,16 +17,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)-8s - 
 """
 
 # 阅读次数 默认120次/60分钟
-READ_NUM = int(os.getenv('READ_NUM') or 120)
+READ_NUM = int(os.getenv('READ_NUM', 120))
 # 需要推送时可选，可选pushplus、wxpusher、telegram
-PUSH_METHOD = "" or os.getenv('PUSH_METHOD')
+PUSH_METHOD = os.getenv('PUSH_METHOD', "")
 # pushplus推送时需填
-PUSHPLUS_TOKEN = "" or os.getenv("PUSHPLUS_TOKEN")
+PUSHPLUS_TOKEN = os.getenv("PUSHPLUS_TOKEN", "")
 # telegram推送时需填
-TELEGRAM_BOT_TOKEN = "" or os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = "" or os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 # wxpusher推送时需填
-WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
+WXPUSHER_SPT = os.getenv("WXPUSHER_SPT", "")
 # read接口的bash命令，本地部署时可对应替换headers、cookies
 curl_str = os.getenv('WXREAD_CURL_BASH')
 if curl_str is None:
