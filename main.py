@@ -4,15 +4,18 @@ import json
 import time
 import random
 import logging
-import hashlib
 import requests
 import urllib.parse
 from push import push
 from config import data, headers, cookies, READ_NUM, PUSH_METHOD
 
-# 配置日志格式
+# 配置日志格式，增加日期时间的详细程度
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d - %(levelname)-8s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)-8s - %(message)s')
 
 COOKIE_DATA = {"rq": "%2Fweb%2Fbook%2Fread"}
 READ_URL = "https://weread.qq.com/web/book/read"
@@ -42,8 +45,14 @@ def cal_hash(input_string):
 def get_wr_skey():
     """刷新cookie密钥"""
     try:
-        response = requests.post(RENEW_URL, headers=headers, cookies=cookies,
-                                 data=json.dumps(COOKIE_DATA, separators=(',', ':')), timeout=10)
+        response = requests.post(
+            RENEW_URL,
+            headers=headers,
+            cookies=cookies,
+            data=json.dumps(COOKIE_DATA, separators=(',', ':')),
+            timeout=10
+        )
+        response.raise_for_status()  # 检查请求是否成功，失败则抛出异常
         logger.info(f"获取wr_skey的响应状态码: {response.status_code}")
         logger.info(f"获取wr_skey的响应头: {response.headers}")
         for cookie in response.headers.get('Set-Cookie', '').split(';'):
@@ -57,26 +66,31 @@ def get_wr_skey():
 
 
 index = 1
-retry_count = 0  # 新增重试次数计数器
-max_retry = 3  # 最大重试次数
+retry_count = 0
+max_retry = 3
 while index <= READ_NUM:
     data['ct'] = int(time.time())
     data['ts'] = int(time.time() * 1000)
     data['rn'] = random.randint(0, 1000)
-    # 移除与KEY相关的sg计算
-    # data['sg'] = hashlib.sha256(f"{data['ts']}{data['rn']}{KEY}".encode()).hexdigest()
     data['s'] = cal_hash(encode_data(data))
 
     logging.info(f"⏱️ 尝试第 {index} 次阅读...")
     try:
-        response = requests.post(READ_URL, headers=headers, cookies=cookies, data=json.dumps(data, separators=(',', ':')), timeout=10)
+        response = requests.post(
+            READ_URL,
+            headers=headers,
+            cookies=cookies,
+            data=json.dumps(data, separators=(',', ':')),
+            timeout=10
+        )
+        response.raise_for_status()
         resData = response.json()
 
         if 'succ' in resData:
             index += 1
             time.sleep(30)
             logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
-            retry_count = 0  # 阅读成功重置重试次数
+            retry_count = 0
         else:
             logging.warning("❌ cookie 已过期，尝试刷新...")
             new_skey = get_wr_skey()
@@ -85,11 +99,11 @@ while index <= READ_NUM:
                 logging.info(f"✅ 密钥刷新成功，新密钥：{new_skey}")
                 logging.info(f"🔄 重新本次阅读。")
             else:
-                ERROR_CODE = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
-                logging.error(ERROR_CODE)
+                error_msg = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
+                logging.error(error_msg)
                 if PUSH_METHOD not in (None, ''):
-                    push(ERROR_CODE, PUSH_METHOD)
-                raise Exception(ERROR_CODE)
+                    push(error_msg, PUSH_METHOD)
+                raise Exception(error_msg)
     except requests.RequestException as e:
         logging.error(f"阅读请求失败: {e}，正在重试...")
         retry_count += 1
