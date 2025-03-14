@@ -76,31 +76,30 @@ data = {
 
 
 def convert(curl_command):
-    """
-    从curl命令字符串中提取出headers与cookies信息
-    :param curl_command: curl命令字符串
-    :return: 提取到的headers和cookies字典
-    """
-    headers_temp = {}
-    cookies_temp = {}
+    try:
+        headers_temp = {}
+        cookies_temp = {}
 
-    # 提取headers
-    header_matches = re.findall(r'-H \'([^:]+): ([^']+)\'', curl_command)
-    for header in header_matches:
-        headers_temp[header[0]] = header[1]
+        # 提取headers
+        header_matches = re.findall(r'-H \'([^:]+): ([^']+)\'', curl_command)
+        for header in header_matches:
+            headers_temp[header[0]] = header[1]
 
-    # 提取cookies
-    all_cookie_matches = re.findall(r'(?:-b \'|; )([^;]+?)\'', curl_command)
-    for cookie in all_cookie_matches:
-        parts = cookie.split('=')
-        if len(parts) == 2:
-            cookies_temp[parts[0].strip()] = parts[1].strip()
+        # 提取cookies
+        all_cookie_matches = re.findall(r'(?:-b \'|; )([^;]+?)\'', curl_command)
+        for cookie in all_cookie_matches:
+            parts = cookie.split('=')
+            if len(parts) == 2:
+                cookies_temp[parts[0].strip()] = parts[1].strip()
 
-    # 合并并更新全局的headers和cookies
-    headers.update(headers_temp)
-    cookies.update(cookies_temp)
+        # 合并并更新全局的headers和cookies
+        headers.update(headers_temp)
+        cookies.update(cookies_temp)
 
-    return headers, cookies
+        return headers, cookies
+    except re.error as e:
+        logger.error(f"正则表达式解析错误: {e}，curl_command: {curl_command}")
+        raise
 
 
 if curl_str:
@@ -109,4 +108,3 @@ if curl_str:
     logger.info("提取后的cookies: %s", cookies)
 else:
     logger.warning("未获取到WXREAD_CURL_BASH，使用默认的headers和cookies")
-
