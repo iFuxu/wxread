@@ -43,12 +43,17 @@ def cal_hash(input_string):
 
 def get_wr_skey():
     """刷新cookie密钥"""
-    response = requests.post(RENEW_URL, headers=headers, cookies=cookies,
-                             data=json.dumps(COOKIE_DATA, separators=(',', ':')))
-    for cookie in response.headers.get('Set-Cookie', '').split(';'):
-        if "wr_skey" in cookie:
-            return cookie.split('=')[-1][:8]
-    return None
+    try:
+        response = requests.post(RENEW_URL, headers=headers, cookies=cookies,
+                                 data=json.dumps(COOKIE_DATA, separators=(',', ':')), timeout=10)
+        for cookie in response.headers.get('Set-Cookie', '').split(';'):
+            if "wr_skey" in cookie:
+                return cookie.split('=')[-1][:8]
+        logger.warning("未在响应中找到wr_skey，响应头信息: %s", response.headers)
+        return None
+    except requests.RequestException as e:
+        logger.error("获取wr_skey时请求失败: %s", e)
+        return None
 
 
 index = 1
@@ -60,27 +65,38 @@ while index <= READ_NUM:
     data['s'] = cal_hash(encode_data(data))
 
     logging.info(f"⏱️ 尝试第 {index} 次阅读...")
-    response = requests.post(READ_URL, headers=headers, cookies=cookies, data=json.dumps(data, separators=(',', ':')))
-    resData = response.json()
+    try:
+        response = requests.post(READ_URL, headers=headers, cookies=cookies, data=json.dumps(data, separators=(',', ':')), timeout=10)
+        resData = response.json()
 
-    if 'succ' in resData:
-        index += 1
-        time.sleep(30)
-        logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
-
-    else:
-        logging.warning("❌ cookie 已过期，尝试刷新...")
-        new_skey = get_wr_skey()
-        if new_skey:
-            cookies['wr_skey'] = new_skey
-            logging.info(f"✅ 密钥刷新成功，新密钥：{new_skey}")
-            logging.info(f"🔄 重新本次阅读。")
+        if 'succ' in resData:
+            index += 1
+            time.sleep(30)
+            logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
         else:
-            ERROR_CODE = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
-            logging.error(ERROR_CODE)
-            push(ERROR_CODE, PUSH_METHOD)
-            raise Exception(ERROR_CODE)
-    data.pop('s')
+            logging.warning("❌ cookie 已过期，尝试刷新...")
+            new_skey = get_wr_skey()
+            if new_skey:
+                cookies['wr_skey'] = new_skey
+                logging.info(f"✅ 密钥刷新成功，新密钥：{new_skey}")
+                logging.info(f"🔄 重新本次阅读。")
+            else:
+                ERROR_CODE = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
+                logging.error(ERROR_CODE)
+                if PUSH_METHOD not in (None, ''):
+                    push(ERROR_CODE, PUSH_METHOD)
+                raise Exception(ERROR_CODE)
+    except requests.RequestException as e:
+        logging.error(f"阅读请求失败: {e}，正在重试...")
+        # 简单的重试逻辑，可根据需求调整重试次数和间隔
+        time.sleep(5)
+        continue
+    except json.JSONDecodeError as e:
+        logging.error(f"解析阅读响应失败: {e}，正在重试...")
+        time.sleep(5)
+        continue
+    finally:
+        data.pop('s')
 
 logging.info("🎉 阅读脚本已完成！")
 
