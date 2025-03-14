@@ -90,8 +90,8 @@ def convert(curl_command):
         headers_temp[header[0]] = header[1]
 
     # 提取cookies
-    cookie_matches = re.findall(r'(?:-b \'|; )([^;]+?)\'', curl_command)
-    for cookie in cookie_matches:
+    all_cookie_matches = re.findall(r'(?:-b \'|; )([^;]+?)\'', curl_command)
+    for cookie in all_cookie_matches:
         parts = cookie.split('=')
         if len(parts) == 2:
             cookies_temp[parts[0].strip()] = parts[1].strip()
@@ -105,10 +105,8 @@ def convert(curl_command):
 
 if curl_str:
     headers, cookies = convert(curl_str)
+    logger.info("提取后的headers: %s", headers)
+    logger.info("提取后的cookies: %s", cookies)
 else:
     logger.warning("未获取到WXREAD_CURL_BASH，使用默认的headers和cookies")
-
-# 打印提取后的headers和cookies，用于调试
-logger.info("提取后的headers: %s", headers)
-logger.info("提取后的cookies: %s", cookies)
 
