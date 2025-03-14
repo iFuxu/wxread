@@ -11,6 +11,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 # 检查环境变量是否存在的辅助函数
 def check_env_variable(var_name):
     var_value = os.getenv(var_name)
@@ -89,13 +90,11 @@ def convert(curl_command):
         headers_temp[header[0]] = header[1]
 
     # 提取cookies
-    cookie_match = re.search(r'-b \'([^']+)\'', curl_command)
-    if cookie_match:
-        cookie_str = cookie_match.group(1)
-        for cookie in cookie_str.split('; '):
-            if '=' in cookie:
-                key, value = cookie.split('=', 1)
-                cookies_temp[key.strip()] = value.strip()
+    cookie_matches = re.findall(r'(?:-b \'|; )([^;]+?)\'', curl_command)
+    for cookie in cookie_matches:
+        parts = cookie.split('=')
+        if len(parts) == 2:
+            cookies_temp[parts[0].strip()] = parts[1].strip()
 
     # 合并并更新全局的headers和cookies
     headers.update(headers_temp)
