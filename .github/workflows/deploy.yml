@@ -1,9 +1,12 @@
-name: WeRead Auto
+name: wxread
+
 on:
   schedule:
-    - cron: '0 21 * * *'   # 北京时间5:00
-    - cron: '40 3 * * *'    # 北京时间11:40 
-    - cron: '0 14 * * *'    # 北京时间22:00
+    - cron: '00 14 * * *'         # 北京22:00
+    - cron: '0 21 * * *'          # 北京5:00
+    - cron: '40 3 * * *'          # 北京11:40
+    - cron: '0 9 * * sat,sun'     # 周末17:00
+    - cron: '0 0 * * 1'           # 周一8:00
   workflow_dispatch:
     inputs:
       mode:
@@ -12,68 +15,96 @@ on:
         default: 'auto'
 
 jobs:
-  execute:
+  deploy:
     runs-on: ubuntu-22.04
     environment: AutoRead
-    env:
-      B_VALUES: ${{ vars.B_VALUES }}       # 书籍ID列表
-      PUSH_METHOD: ${{ vars.PUSH_METHOD }} # 推送方式
-      WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
 
     steps:
-    # ----------------- 初始化阶段 -----------------
-    - name: 🔧 DNS配置
+    - name: 🔧 设置DNS
       run: |
         echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
         echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+        echo "✅ DNS配置完成"
 
-    - name: 📥 代码检出
+    - name: 📥 检出仓库
       uses: actions/checkout@v4
-      with:
-        path: main-repo
 
-    # ---------------- 环境准备 --------------------
-    - name: 🐍 Python环境
+    - name: 🐍 设置Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        cache: 'pip'
 
     - name: 📦 安装依赖
-      working-directory: main-repo
       run: |
-        pip install requests==2.32.3 python-dotenv==1.0.0
-        echo "✅ 依赖安装完成"
+        python -m pip install --upgrade pip
+        pip install certifi==2024.8.30 charset-normalizer==3.4.0 idna==3.10 requests==2.32.3 urllib3==2.2.3
+        echo "✅ 依赖安装验证：$(pip list | grep requests)"
 
-    # ---------------- 执行控制 --------------------
-    - name: ⏳ 随机延迟
+    - name: ⏱️ 随机延迟
       run: |
-        DELAY=$(($RANDOM % 21))
-        echo "🕒 延迟 ${DELAY} 分钟启动"
-        sleep $(($DELAY * 60))
+        DELAY=$((RANDOM % 21))
+        echo "生成的随机延迟：${DELAY}分钟"
+        sleep $((DELAY * 60))
+        echo "延迟执行完成"
 
-    - name: 🎲 生成动态参数
-      id: params
-      working-directory: main-repo
+    - name: 🎲 周随机检查
+      if: github.event_name == 'schedule' && github.event.schedule == '0 0 * * 1'
       run: |
-        HOUR=$(date -u +%H)
-        case $HOUR in
-          21)   # 对应北京时间5:00
-            READ_NUM=$((90 + $RANDOM % 41)) ;;  # 90-130次
-          3)    # 对应北京时间11:40
-            READ_NUM=$((120 + $RANDOM % 61)) ;; # 120-180次
-          14)   # 对应北京时间22:00
-            READ_NUM=$((180 + $RANDOM % 61)) ;; # 180-240次
-          *)
-            READ_NUM=150 ;;
-        esac
-        echo "READ_NUM=$READ_NUM" >> $GITHUB_ENV
-        echo "生成阅读次数: $READ_NUM"
+        CHECK=$((RANDOM % 7))
+        echo "随机数：$CHECK (需要等于0)"
+        if [ $CHECK -ne 0 ]; then
+          echo "⏭️ 跳过周随机任务"
+          exit 0
+        fi
+        echo "🎉 触发周随机任务"
 
-    - name: 🚀 执行任务
-      working-directory: main-repo
+    - name: 🔢 生成READ_NUM
+      run: |
+        # 调试信息
+        echo "=== 触发事件分析 ==="
+        echo "事件类型: ${{ github.event_name }}"
+        echo "输入模式: ${{ github.event.inputs.mode }}"
+        echo "定时规则: ${{ github.event.schedule }}"
+
+        if [[ "${{ github.event.inputs.mode }}" == "manual" ]]; then
+          # 手动模式
+          NUM=$((RANDOM % 91 + 90))
+          echo "🕹️ 手动模式 | 范围: 90-180 (45-90分钟)"
+        else
+          # 获取触发规则
+          SCHEDULE="${{ github.event.schedule }}"
+
+          case "$SCHEDULE" in
+            '0 21 * * *')
+              NUM=$((RANDOM % 61 + 90))   # 45-75分钟
+              echo "🌅 早间任务 | 范围: 90-150" ;;
+            '40 3 * * *')
+              NUM=$((RANDOM % 61 + 120))  # 60-90分钟
+              echo "🌞 午间任务 | 范围: 120-180" ;;
+            '00 14 * * *')
+              NUM=$((RANDOM % 61 + 120))  # 60-90分钟
+              echo "🌙 晚间任务 | 范围: 120-180" ;;
+            '0 9 * * sat,sun')
+              NUM=$((RANDOM % 61 + 120))  # 60-90分钟
+              echo "🎉 周末任务 | 范围: 120-180" ;;
+            '0 0 * * 1')
+              NUM=$((RANDOM % 121 + 120)) # 60-120分钟
+              echo "🎰 周随机任务 | 范围: 120-240" ;;
+            *)
+              # 安全模式：生成默认值
+              NUM=$((RANDOM % 61 + 120))
+              echo "⚠️ 未知触发类型 | 启用安全默认值: 120-180" ;;
+          esac
+        fi
+
+        # 输出结果
+        echo "✅ 最终READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
+        echo "READ_NUM=$NUM" >> $GITHUB_ENV
+
+    - name: 🚀 执行主程序
       env:
-        READ_NUM: ${{ env.READ_NUM }}
-        PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
       run: |
+        echo "=== 执行参数 ==="
+        echo "READ_NUM: ${{ env.READ_NUM }}"
         python main.py
