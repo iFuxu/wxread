@@ -1,6 +1,10 @@
 # config.py 自定义配置,包括阅读次数、推送token的填写
 import os
 import re
+import logging
+
+# 配置日志格式
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)-8s - %(message)s')
 
 """
 可修改区域
@@ -20,6 +24,10 @@ TELEGRAM_CHAT_ID = "" or os.getenv("TELEGRAM_CHAT_ID")
 WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
 # read接口的bash命令，本地部署时可对应替换headers、cookies
 curl_str = os.getenv('WXREAD_CURL_BASH')
+if curl_str is None:
+    logging.error("未获取到 WXREAD_CURL_BASH 环境变量")
+else:
+    logging.info(f"获取到的 WXREAD_CURL_BASH 值为: {curl_str}")
 
 # headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
@@ -54,8 +62,6 @@ data = {
     "rt": 30,
     "ts": 1739673850629,
     "rn": 412,
-    # 移除与KEY相关的sg字段
-    # "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8",
     "ct": 1739673850,
     "ps": "ca5326207a5e8814g01704b",
     "pc": "f2332e707a5e8814g0181e0",
