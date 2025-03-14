@@ -14,8 +14,6 @@ from config import data, headers, cookies, READ_NUM, PUSH_METHOD
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)-8s - %(message)s')
 
-# 加密盐及其它默认值
-KEY = "3c5c8717f3daf09iop3423zafeqoi"
 COOKIE_DATA = {"rq": "%2Fweb%2Fbook%2Fread"}
 READ_URL = "https://weread.qq.com/web/book/read"
 RENEW_URL = "https://weread.qq.com/web/login/renewal"
@@ -46,6 +44,8 @@ def get_wr_skey():
     try:
         response = requests.post(RENEW_URL, headers=headers, cookies=cookies,
                                  data=json.dumps(COOKIE_DATA, separators=(',', ':')), timeout=10)
+        logger.info(f"获取wr_skey的响应状态码: {response.status_code}")
+        logger.info(f"获取wr_skey的响应头: {response.headers}")
         for cookie in response.headers.get('Set-Cookie', '').split(';'):
             if "wr_skey" in cookie:
                 return cookie.split('=')[-1][:8]
@@ -57,11 +57,14 @@ def get_wr_skey():
 
 
 index = 1
+retry_count = 0  # 新增重试次数计数器
+max_retry = 3  # 最大重试次数
 while index <= READ_NUM:
     data['ct'] = int(time.time())
     data['ts'] = int(time.time() * 1000)
     data['rn'] = random.randint(0, 1000)
-    data['sg'] = hashlib.sha256(f"{data['ts']}{data['rn']}{KEY}".encode()).hexdigest()
+    # 移除与KEY相关的sg计算
+    # data['sg'] = hashlib.sha256(f"{data['ts']}{data['rn']}{KEY}".encode()).hexdigest()
     data['s'] = cal_hash(encode_data(data))
 
     logging.info(f"⏱️ 尝试第 {index} 次阅读...")
@@ -73,6 +76,7 @@ while index <= READ_NUM:
             index += 1
             time.sleep(30)
             logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
+            retry_count = 0  # 阅读成功重置重试次数
         else:
             logging.warning("❌ cookie 已过期，尝试刷新...")
             new_skey = get_wr_skey()
@@ -88,11 +92,18 @@ while index <= READ_NUM:
                 raise Exception(ERROR_CODE)
     except requests.RequestException as e:
         logging.error(f"阅读请求失败: {e}，正在重试...")
-        # 简单的重试逻辑，可根据需求调整重试次数和间隔
+        retry_count += 1
+        if retry_count >= max_retry:
+            logging.error(f"达到最大重试次数 {max_retry}，放弃本次阅读请求。")
+            break
         time.sleep(5)
         continue
     except json.JSONDecodeError as e:
         logging.error(f"解析阅读响应失败: {e}，正在重试...")
+        retry_count += 1
+        if retry_count >= max_retry:
+            logging.error(f"达到最大重试次数 {max_retry}，放弃本次阅读请求。")
+            break
         time.sleep(5)
         continue
     finally:
