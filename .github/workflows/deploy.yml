@@ -1,91 +1,169 @@
-name: wxread
+##############################
+### 工作流基本信息配置
+##############################
+name: wxread  # 工作流名称，显示在Actions面板
 
 on:
+  ##############################
+  ### 触发条件配置
+  ##############################
   schedule:
-    - cron: '00 14 * * *'         # 北京22:00 UTC+8
-    - cron: '0 21 * * *'          # 北京5:00
-    - cron: '40 3 * * *'         # 北京11:40
-    - cron: '0 9 * * sat,sun'    # 周末17:00
-    - cron: '0 0 * * 1'          # 周一8:00
+    # 定时任务配置（UTC时间）
+    - cron: '00 14 * * *'        # 北京时间22:00 (UTC+8)
+    - cron: '0 21 * * *'         # 北京时间5:00
+    - cron: '40 3 * * *'         # 北京时间11:40
+    - cron: '0 9 * * sat,sun'    # 周末17:00（周六/日）
+    - cron: '0 0 * * 1'          # 周一8:00（UTC时间周一0点）
+
+  # 手动触发配置
   workflow_dispatch:
     inputs:
       mode:
-        description: '运行模式 (auto/manual)'
-        required: false
-        default: 'auto'
+        description: '运行模式 (auto/manual)'  # 输入参数提示
+        required: false           # 非必填
+        default: 'auto'           # 默认自动模式
 
 jobs:
+  ##############################
+  ### 主任务配置
+  ##############################
   deploy:
-    runs-on: ubuntu-22.04
-    environment: AutoRead
+    # 基础环境配置
+    runs-on: ubuntu-22.04         # 使用最新LTS版本
+    environment: AutoRead         # 关联环境（用于权限管理）
 
     steps:
+    ##############################
+    ### 系统初始化步骤
+    ##############################
     - name: 🔧 设置DNS
       run: |
+        # 解决某些地区DNS解析问题
         echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
         echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
 
     - name: 📥 检出仓库
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4    # 官方检出动作，必须步骤
 
+    ##############################
+    ### 环境准备
+    ##############################
     - name: 🐍 设置Python 3.10
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.10'    # 指定Python版本确保兼容性
 
     - name: 📦 安装依赖
       run: |
-        pip install requests==2.32.3
+        # 最小化依赖安装（仅需requests库）
+        pip install requests==2.32.3  # 固定版本避免兼容问题
 
-    # 仅定时任务执行延迟（排除周一任务和手动模式）
+    ##############################
+    ### 业务逻辑控制
+    ##############################
     - name: ⏱️ 随机延迟
       if: |
+        # 延迟条件：仅非手动模式且非周一任务
         github.event_name == 'schedule' &&
         github.event.schedule != '0 0 * * 1' &&
         github.event.inputs.mode != 'manual'
       run: |
+        # 生成0-20分钟随机延迟
         DELAY=$((RANDOM % 21))
-        echo "🕒 延迟 $DELAY 分钟"
+        echo "🕒 随机延迟 $DELAY 分钟"
         sleep $(($DELAY * 60))
 
-    # 周一随机检查（1/7概率）
     - name: 🎲 周随机检查
-      if: github.event.schedule == '0 0 * * 1'
+      if: github.event.schedule == '0 0 * * 1'  # 仅周一任务执行
       run: |
+        # 1/7概率跳过任务（每周随机执行）
         if [ $((RANDOM % 7)) -ne 0 ]; then
           echo "⏩ 跳过本周任务"
-          exit 0
+          exit 0  # 正常退出不报错
         fi
 
-    # 动态生成阅读时长
-    - name: 🔢 生成READ_NUM
+    ##############################
+    ### 核心业务逻辑
+    ##############################
+    - name: 🔢 生成阅读时长
+      id: generate_time
       run: |
+        # 手动模式处理
         if [[ "${{ github.event.inputs.mode }}" == "manual" ]]; then
-          # 手动模式：90-180分钟（45-90分钟*2）
-          NUM=$((90 + RANDOM % 91)) 
-          echo "🛠️ 手动模式 READ_NUM=$NUM"
+          NUM=$((90 + RANDOM % 91))  # 90-180（45-90分钟阅读）
+          echo "🛠️ 手动模式生成时长: $NUM"
+        
+        # 自动模式处理  
         else
           case "${{ github.event.schedule }}" in
-            '0 21 * * *')   # 早间任务
-              NUM=$((90 + RANDOM % 61)) ;; # 45-75分钟
-            '40 3 * * *')   # 午间任务
+            '0 21 * * *')   # 早间任务（5:00）
+              NUM=$((90 + RANDOM % 61)) ;;  # 90-150
+            
+            '40 3 * * *')   # 午间任务（11:40）
+              NUM=$((120 + RANDOM % 61)) ;; # 120-180
+            
+            '00 14 * * *')  # 晚间任务（22:00）
               NUM=$((120 + RANDOM % 61)) ;;
-            '00 14 * * *')  # 晚间任务
+            
+            '0 9 * * sat,sun') # 周末任务
               NUM=$((120 + RANDOM % 61)) ;;
-            '0 9 * * sat,sun') # 周末
-              NUM=$((120 + RANDOM % 61)) ;;
+            
             '0 0 * * 1')    # 周一任务
-              NUM=$((120 + RANDOM % 121)) ;;
-            *)              # 默认安全值
+              NUM=$((120 + RANDOM % 121)) ;; # 120-240
+            
+            *)              # 未知触发类型安全值
               NUM=$((120 + RANDOM % 61)) ;;
           esac
-          echo "⏰ 定时模式 READ_NUM=$NUM"
+          echo "⏰ 自动模式生成时长: $NUM"
         fi
+
+        # 写入环境变量（跨步骤共享）
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
 
-    - name: 🚀 执行主程序
-      env:
-        WXREAD_CURL: ${{ secrets.WXREAD_CURL }}
+    ##############################
+    ### 请求执行与验证
+    ##############################
+    - name: 🔍 验证环境变量
       run: |
-        curl -X POST -d "read_num=$READ_NUM" "$WXREAD_CURL"
-        echo "✅ 已提交阅读时长：$READ_NUM 分钟"
+        # 关键参数安全检查
+        if [ -z "$WXREAD_CURL" ]; then
+          echo "❌ 错误：未配置WXREAD_CURL密钥"
+          exit 1
+        fi
+        
+        if [ -z "$READ_NUM" ]; then
+          echo "❌ 错误：READ_NUM生成失败"
+          exit 1
+        fi
+        echo "✅ 环境变量验证通过"
+
+    - name: 🚀 执行API请求
+      env:
+        WXREAD_CURL: ${{ secrets.WXREAD_CURL }}  # 从仓库密钥读取
+      run: |
+        # 带重试机制的请求（最多3次）
+        for retry in {1..3}; do
+          echo "🔄 尝试第 $retry 次请求..."
+          
+          # 执行curl请求并捕获状态码
+          response=$(curl -sS -w "&#92;n%{http_code}" -X POST &#92;
+            -d "read_num=$READ_NUM" &#92;
+            "$WXREAD_CURL")
+          
+          # 分离响应内容和状态码
+          http_code=$(echo "$response" | tail -n1)
+          content=$(echo "$response" | head -n -1)
+          
+          # 状态码处理
+          if [ $http_code -eq 200 ]; then
+            echo "✅ 请求成功 | 响应内容: $content"
+            exit 0  # 成功时退出循环
+          else
+            echo "⚠️ 请求失败 | 状态码: $http_code"
+            sleep 5  # 失败后等待5秒重试
+          fi
+        done
+
+        # 全部重试失败后退出
+        echo "❌ 三次尝试均失败"
+        exit 1
