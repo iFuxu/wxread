@@ -52,11 +52,9 @@ def cal_hash(input_string):
 
 
 def get_wr_skey():
-    """
-    发送请求刷新cookie密钥
-    :return: 提取到的新的wr_skey值，如果未找到则返回None
-    """
     try:
+        logger.info(f"请求获取wr_skey的headers: {headers}")
+        logger.info(f"请求获取wr_skey的cookies: {cookies}")
         response = requests.post(
             RENEW_URL,
             headers=headers,
@@ -145,4 +143,5 @@ logging.info("🎉 阅读脚本已完成！")
 if PUSH_METHOD not in (None, ''):
     logging.info("⏱️ 开始推送...")
     push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)
-
+else:
+    logging.info("未设置推送方法，跳过推送操作。")
