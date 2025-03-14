@@ -77,6 +77,11 @@ data = {
 
 def convert(curl_command):
     try:
+        logger.info(f"原始的 curl_command: {curl_command}")
+        # 尝试去除一些可能影响的特殊字符（可根据实际情况调整）
+        curl_command = curl_command.replace('\\', '')
+        logger.info(f"处理后的 curl_command: {curl_command}")
+
         headers_temp = {}
         cookies_temp = {}
 
@@ -108,3 +113,4 @@ if curl_str:
     logger.info("提取后的cookies: %s", cookies)
 else:
     logger.warning("未获取到WXREAD_CURL_BASH，使用默认的headers和cookies")
+
