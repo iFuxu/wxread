@@ -48,6 +48,8 @@ jobs:
         sleep $((DELAY * 60))
         echo "延迟执行完成"
 
+    # 其他部分保持不变...
+
     - name: 🔢 生成READ_NUM
       run: |
         # 调试信息
@@ -75,9 +77,11 @@ jobs:
               NUM=$((RANDOM % 21 + 100))  # 100-120分钟
               echo "🌙 晚间任务 | 范围: 100-120" ;;
             '0 10 * * sat')
+              NUM=$((RANDOM % 121 + 120))
+              echo "🎉 周六任务 | 范围: 120-240" ;;
             '0 10 * * sun')
-              NUM=$((RANDOM % 121 + 120)) # 60-120分钟
-              echo "🎉 周末任务 | 范围: 120-240" ;;
+              NUM=$((RANDOM % 121 + 120))
+              echo "🎉 周日任务 | 范围: 120-240" ;;
             *)
               # 安全模式：生成默认值
               NUM=$((RANDOM % 61 + 120))
@@ -88,11 +92,3 @@ jobs:
         # 输出结果
         echo "✅ 最终READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
-
-    - name: 🚀 执行主程序
-      env:
-        WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
-      run: |
-        echo "=== 执行参数 ==="
-        echo "READ_NUM: ${{ env.READ_NUM }}"
-        python main.py
