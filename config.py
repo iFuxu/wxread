@@ -14,7 +14,7 @@ PUSH_METHOD = "" or os.getenv('PUSH_METHOD')
 # pushplus推送时需填
 PUSHPLUS_TOKEN = "" or os.getenv("PUSHPLUS_TOKEN")
 # telegram推送时需填
-TELEGRAM_BOT_TOKEN = "" or os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = "" or os.getenv("TELEGRAM_BOT_TOKEN")  
 TELEGRAM_CHAT_ID = "" or os.getenv("TELEGRAM_CHAT_ID")
 # wxpusher推送时需填
 WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
@@ -25,7 +25,7 @@ curl_str = os.getenv('WXREAD_CURL_BASH')
 cookies = {
     'RK': 'oxEY1bTnXf',
     'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',
-    'pac_uid': '0_e63870bcecc18',
+    'pac_uid': '0_e63870bcecc18',  
     'iip': '0',
     '_qimei_uuid42': '183070d3135100ee797b08bc922054dc3062834291',
     'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FeEOpSbFh2Mb1bUxMW9Y3FRPfXwWvOLaNlsjWIkcKeeNg6vlVS5kOVuhNKGQ1M8zaggLqMPmpE5qIUdqEXlQgYg%2F132',
@@ -35,7 +35,7 @@ cookies = {
 headers = {
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ko;q=0.5',
-    'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',
+    'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',  
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
 }
 
@@ -44,20 +44,20 @@ headers = {
 建议保留区域|默认读三体，其它书籍自行测试时间是否增加
 """
 data = {
-    "appId": "wb182564874663h776775553",
-    "b": "f623242072a191daf6294db",
-    "c": "17c32d00329e17c276c8288",
-    "ci": 137,
-    "co": 7098,
-    "sm": "其实领导也挺不好当的。”我笑了笑，说",
-    "pr": 55,
-    "rt": 30,
-    "ts": 1739673850629,
-    "rn": 412,
-    "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8",
-    "ct": 1739673850,
-    "ps": "ca5326207a5e8814g01704b",
-    "pc": "f2332e707a5e8814g0181e0",
+    "appId": "wb182564874663h1964571299",
+    "b": "a57325c05c8ed3a57224187",
+    "c": "758322b0313a75887499e0f",
+    "ci": 314,
+    "co": 338,
+    "sm": "第312章道统(2)比如前面提到的四位仁",
+    "pr": 100,
+    "rt": 9,
+    "ts": 1741919261295,
+    "rn": 267,
+    "sg": "6449792d4401626f02f6262958189600ee8da8dc236bafcb9e101b9d5af87cf7",
+    "ct": 1741919261,
+    "ps": "7fe32f807a61f534g018d87",
+    "pc": "ec4329907a61f535g010bc9",
 }
 
 
