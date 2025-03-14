@@ -9,7 +9,7 @@ import urllib.parse
 from push import push
 from config import data, headers, cookies, READ_NUM, PUSH_METHOD
 
-# 配置日志格式，增加日期时间的详细程度
+# 配置日志格式，增加日期时间的详细程度和毫秒级显示
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s.%(msecs)03d - %(levelname)-8s - %(message)s',
@@ -17,18 +17,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# 定义常量，使代码更清晰易读
 COOKIE_DATA = {"rq": "%2Fweb%2Fbook%2Fread"}
 READ_URL = "https://weread.qq.com/web/book/read"
 RENEW_URL = "https://weread.qq.com/web/login/renewal"
 
 
 def encode_data(data):
-    """数据编码"""
+    """
+    对传入的数据进行编码处理
+    :param data: 包含请求参数的字典数据
+    :return: 编码后的参数字符串
+    """
     return '&'.join(f"{k}={urllib.parse.quote(str(data[k]), safe='')}" for k in sorted(data.keys()))
 
 
 def cal_hash(input_string):
-    """计算哈希值"""
+    """
+    计算输入字符串的哈希值
+    :param input_string: 待计算哈希值的字符串
+    :return: 计算得到的哈希值（十六进制字符串形式）
+    """
     _7032f5 = 0x15051505
     _cc1055 = _7032f5
     length = len(input_string)
@@ -43,7 +52,10 @@ def cal_hash(input_string):
 
 
 def get_wr_skey():
-    """刷新cookie密钥"""
+    """
+    发送请求刷新cookie密钥
+    :return: 提取到的新的wr_skey值，如果未找到则返回None
+    """
     try:
         response = requests.post(
             RENEW_URL,
@@ -105,7 +117,8 @@ while index <= READ_NUM:
                     push(error_msg, PUSH_METHOD)
                 raise Exception(error_msg)
     except requests.RequestException as e:
-        logging.error(f"阅读请求失败: {e}，正在重试...")
+        # 详细记录请求异常信息，包括请求的URL和参数等（如果有）
+        logger.error(f"阅读请求失败: {e}，请求URL: {READ_URL}，请求参数: {data}，正在重试...")
         retry_count += 1
         if retry_count >= max_retry:
             logging.error(f"达到最大重试次数 {max_retry}，放弃本次阅读请求。")
@@ -113,7 +126,12 @@ while index <= READ_NUM:
         time.sleep(5)
         continue
     except json.JSONDecodeError as e:
-        logging.error(f"解析阅读响应失败: {e}，正在重试...")
+        # 记录解析JSON响应失败的详细信息，包括响应内容（如果有）
+        try:
+            response_text = response.text if response else "无响应内容"
+            logger.error(f"解析阅读响应失败: {e}，响应内容: {response_text}，正在重试...")
+        except:
+            logger.error(f"解析阅读响应失败: {e}，无响应内容可获取，正在重试...")
         retry_count += 1
         if retry_count >= max_retry:
             logging.error(f"达到最大重试次数 {max_retry}，放弃本次阅读请求。")
