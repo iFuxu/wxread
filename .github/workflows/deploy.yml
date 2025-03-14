@@ -1,18 +1,15 @@
 ##############################
-### 工作流基本信息配置
+### 微信读书自动化工作流
 ##############################
-name: wxread
+name: WeRead Auto
 
 on:
-  ##############################
-  ### 触发条件配置（北京时间）
-  ##############################
   schedule:
-    - cron: '0 22 * * *'        # 每天22:00
-    - cron: '0 5 * * *'         # 每天5:00
-    - cron: '40 11 * * *'      # 每天11:40
-    - cron: '0 17 * * 6,7'     # 周末17:00（周六/日）
-    - cron: '0 8 * * 1'        # 周一8:00
+    - cron: '0 22 * * *'    # 每天22:00（北京时间）
+    - cron: '0 5 * * *'     # 每天5:00
+    - cron: '40 11 * * *'   # 每天11:40
+    - cron: '0 17 * * 6,7'  # 周末17:00（周六/日）
+    - cron: '0 8 * * 1'     # 周一8:00
     timezone: Asia/Shanghai
 
   workflow_dispatch:
@@ -23,15 +20,15 @@ on:
         default: 'auto'
 
 jobs:
-  deploy:
+  generate-reading-time:
     runs-on: ubuntu-22.04
-    environment: AutoRead
+    environment: Production
 
     steps:
-    - name: 📥 检出仓库
+    - name: 🛠️ 检出代码
       uses: actions/checkout@v4
 
-    - name: 🐍 设置Python
+    - name: 🐍 配置Python环境
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -39,20 +36,19 @@ jobs:
     - name: 📦 安装依赖
       run: pip install requests==2.32.3
 
-    - name: ⏱️ 动态延迟
-      if: github.event_name == 'schedule' && inputs.mode != 'manual'
+    - name: ⏳ 随机延迟机制
+      if: github.event_name == 'schedule' && github.event.inputs.mode != 'manual'
       run: |
         if [ $(date +%u) -eq 1 ] && [ $(date +%H) -eq 8 ]; then
-          echo "⏩ 周一任务跳过延迟"
+          echo "⏩ 跳过周一任务延迟"
           exit 0
         fi
-        
         DELAY=$((RANDOM % 21))
-        echo "🕒 随机延迟 $DELAY 分钟"
+        echo "随机延迟 ${DELAY} 分钟"
         sleep ${DELAY}m
 
-    - name: 🎲 周随机机制
-      if: github.event_name == 'schedule' && inputs.mode == 'auto'
+    - name: 🎲 每周随机跳过
+      if: github.event_name == 'schedule' && github.event.inputs.mode == 'auto'
       run: |
         if [ $(date +%u) -eq 1 ] && [ $(date +%H) -eq 8 ]; then
           if [ $((RANDOM % 7)) -eq 0 ]; then
@@ -61,33 +57,41 @@ jobs:
           fi
         fi
 
-    - name: 🔢 智能生成时长
-      id: time_generator
+    - name: 🕒 生成阅读时长
+      id: generate-time
       run: |
-        if [[ "${{ inputs.mode }}" == "manual" ]]; then
+        MODE="${{ github.event.inputs.mode }}"
+        if [[ "$MODE" == "manual" ]]; then
           NUM=$((90 + RANDOM % 91))
-          echo "🛠️ 手动模式生成: ${NUM}s"
+          echo "手动生成时长: ${NUM}秒"
         else
-          CURRENT_HOUR=$(date +%H)
-          case $CURRENT_HOUR in
-            05)
+          CURRENT_HOUR=$(date +%-H)
+          CURRENT_WEEKDAY=$(date +%u)
+
+          case "${CURRENT_HOUR}" in
+            5)   # 晨间任务
               NUM=$((90 + RANDOM % 61)) ;;
-            11)
+            11)  # 午间任务
               NUM=$((120 + RANDOM % 61)) ;;
-            22)
+            22)  # 晚间任务
               NUM=$((120 + RANDOM % 61)) ;;
-            17)
-              if [ $(date +%u) -ge 6 ]; then
+            17)  # 周末任务
+              if [ $CURRENT_WEEKDAY -ge 6 ]; then
                 NUM=$((120 + RANDOM % 61))
               else
-                echo "⚠️ 非周末跳过周末任务"
+                echo "⚠️ 非周末时间跳过周末任务"
                 NUM=0
               fi ;;
-            08)
+            8)   # 周一任务
               NUM=$((120 + RANDOM % 61)) ;;
             *)
-              echo "❌ 时间匹配异常"
+              echo "❌ 未匹配到有效时间段"
               exit 1 ;;
           esac
         fi
-        echo "::set-output name=read_time::$NUM"
+        echo "read_time=$NUM" >> $GITHUB_OUTPUT
+
+    - name: 📤 上传结果
+      if: steps.generate-time.outputs.read_time != '0'
+      run: |
+        echo "✅ 最终生成的阅读时长：${{ steps.generate-time.outputs.read_time }}秒"
