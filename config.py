@@ -3,7 +3,7 @@ import os
 import re
 import logging
 
-# 配置日志格式，增加日期时间的详细程度
+# 配置日志格式，增加日期时间的详细程度和毫秒级显示
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s.%(msecs)03d - %(levelname)-8s - %(message)s',
@@ -11,28 +11,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-"""
-可修改区域
-默认使用本地值如果不存在从环境变量中获取值
-"""
+# 检查环境变量是否存在的辅助函数
+def check_env_variable(var_name):
+    var_value = os.getenv(var_name)
+    if var_value is None:
+        logger.error(f"未获取到环境变量 {var_name}")
+    else:
+        logger.info(f"获取到的环境变量 {var_name} 值为: {var_value}")
+    return var_value
+
 
 # 阅读次数 默认120次/60分钟
-READ_NUM = int(os.getenv('READ_NUM', 120))
+READ_NUM = int(check_env_variable('READ_NUM') or 120)
 # 需要推送时可选，可选pushplus、wxpusher、telegram
-PUSH_METHOD = os.getenv('PUSH_METHOD', "")
+PUSH_METHOD = check_env_variable('PUSH_METHOD') or ""
 # pushplus推送时需填
-PUSHPLUS_TOKEN = os.getenv("PUSHPLUS_TOKEN", "")
+PUSHPLUS_TOKEN = check_env_variable("PUSHPLUS_TOKEN") or ""
 # telegram推送时需填
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_BOT_TOKEN = check_env_variable("TELEGRAM_BOT_TOKEN") or ""
+TELEGRAM_CHAT_ID = check_env_variable("TELEGRAM_CHAT_ID") or ""
 # wxpusher推送时需填
-WXPUSHER_SPT = os.getenv("WXPUSHER_SPT", "")
+WXPUSHER_SPT = check_env_variable("WXPUSHER_SPT") or ""
 # read接口的bash命令，本地部署时可对应替换headers、cookies
-curl_str = os.getenv('WXREAD_CURL_BASH')
-if curl_str is None:
-    logging.error("未获取到 WXREAD_CURL_BASH 环境变量")
-else:
-    logging.info(f"获取到的 WXREAD_CURL_BASH 值为: {curl_str}")
+curl_str = check_env_variable('WXREAD_CURL_BASH')
 
 # headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
@@ -74,8 +75,10 @@ data = {
 
 
 def convert(curl_command):
-    """提取bash接口中的headers与cookies
-    支持 -H 'Cookie: xxx' 和 -b 'xxx' 两种方式的cookie提取
+    """
+    从curl命令字符串中提取出headers与cookies信息
+    :param curl_command: curl命令字符串
+    :return: 提取到的headers和cookies字典
     """
     # 提取 headers
     headers_temp = {}
