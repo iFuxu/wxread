@@ -21,7 +21,7 @@ WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
 # read接口的bash命令，本地部署时可对应替换headers、cookies
 curl_str = os.getenv('WXREAD_CURL_BASH')
 
-# 原始的headers、cookies和data，作为默认值
+# headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
     'RK': 'oxEY1bTnXf',
     'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',
@@ -39,6 +39,10 @@ headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
 }
 
+
+"""
+建议保留区域|默认读三体，其它书籍自行测试时间是否增加
+"""
 data = {
     "appId": "wb182564874663h776775553",
     "b": "f623242072a191daf6294db",
@@ -50,11 +54,13 @@ data = {
     "rt": 30,
     "ts": 1739673850629,
     "rn": 412,
-    "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8",
+    # 移除与KEY相关的sg字段
+    # "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8",
     "ct": 1739673850,
     "ps": "ca5326207a5e8814g01704b",
     "pc": "f2332e707a5e8814g0181e0",
 }
+
 
 def convert(curl_command):
     """提取bash接口中的headers与cookies
@@ -67,79 +73,27 @@ def convert(curl_command):
 
     # 提取 cookies
     cookies = {}
-    
+
     # 从 -H 'Cookie: xxx' 提取
-    cookie_header = next((v for k, v in headers_temp.items() 
-                         if k.lower() == 'cookie'), '')
-    
+    cookie_header = next((v for k, v in headers_temp.items()
+                          if k.lower() == 'cookie'), '')
+
     # 从 -b 'xxx' 提取
     cookie_b = re.search(r"-b '([^']+)'", curl_command)
     cookie_string = cookie_b.group(1) if cookie_b else cookie_header
-    
+
     # 解析 cookie 字符串
     if cookie_string:
         for cookie in cookie_string.split('; '):
             if '=' in cookie:
                 key, value = cookie.split('=', 1)
                 cookies[key.strip()] = value.strip()
-    
+
     # 移除 headers 中的 Cookie/cookie
-    headers = {k: v for k, v in headers_temp.items() 
-              if k.lower() != 'cookie'}
+    headers = {k: v for k, v in headers_temp.items()
+               if k.lower() != 'cookie'}
 
     return headers, cookies
 
-# 使用新的curl命令更新headers和cookies
-new_headers, new_cookies = convert(curl_str if curl_str else 'curl ' + 
-'https://weread.qq.com/web/book/read' 
-  +' -H \'accept: application/json, text/plain, */*\' '
-  +' -H \'accept-language: zh,zh-TW;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6\' '
-  +' -H \'baggage: sentry-environment=production,sentry-release=dev-1738835404736,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=a933e810bcb84917bdcfb7488323db1d\' '
-  +' -H \'content-type: application/json;charset=UTF-8\' '
-  +' -b \'_clck=19i332h|1|ftt|0; wr_fp=813316764; wr_pf=0; wr_useHorizonReader=0; wr_vid=917243444; wr_rt=web%40n6skqK5Lkz_r9sCnvj3_AL; wr_localvid=92a32810836ac063492a86f; wr_name=%C2%A0; wr_avatar=https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FOcM3yyOe0qGkN6o1E9CdsLtKzJFk5sjBLAKtKjZsc8ejfHSWu4xC3WPthibRoJdZVia6j8bgpMKUMBoiaR0HicCl4nsAuVSTHxRxTYKxu8NBBFI%2F132; wr_gender=0; wr_skey=gMy6hMdJ; wr_gid=292659964\' '
-  +' -H \'dnt: 1\' '
-  +' -H \'origin: https://weread.qq.com\' '
-  +' -H \'priority: u=1, i\' '
-  +' -H \'referer: https://weread.qq.com/web/reader/a57325c05c8ed3a57224187k3fe32cd0313c3fe94a00ac6\' '
-  +' -H \'sec-ch-ua: "Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"\' '
-  +' -H \'sec-ch-ua-mobile: ?0\' '
-  +' -H \'sec-ch-ua-platform: "Windows"\' '
-  +' -H \'sec-fetch-dest: empty\' '
-  +' -H \'sec-fetch-mode: cors\' '
-  +' -H \'sec-fetch-site: same-origin\' '
-  +' -H \'sec-gpc: 1\' '
-  +' -H \'sentry-trace: a933e810bcb84917bdcfb7488323db1d-9b666a64aa41aac9\' '
-  +' -H \'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36\' '
-  +' --data-raw \'{"appId":"wb182564874663h1964571299","b":"a57325c05c8ed3a57224187","c":"3fe32cd0313c3fe94a00ac6","ci":316,"co":338,"sm":"第314章杨涟(1)天启四年(1624)","pr":100,"rt":9,"ts":1741939163852,"rn":889,"sg":"d2d73b99e3fcba8d0c3bea6ab4ebc2de9de6f4e79b423d9994196781ff05ad7e","ct":1741939163,"ps":"b13323b07a61fcfbg011ec6","pc":"e5932cd07a61fcfbg013cfd","s":"88ee39ee"}\'')
-headers.update(new_headers)
-cookies.update(new_cookies)
-
-# 尝试提取data中的字段并更新到现有data中
-try:
-    data_str = re.search(r"--data-raw '({.*?})'", curl_str if curl_str else 'curl ' + 
-'https://weread.qq.com/web/book/read' 
-  +' -H \'accept: application/json, text/plain, */*\' '
-  +' -H \'accept-language: zh,zh-TW;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6\' '
-  +' -H \'baggage: sentry-environment=production,sentry-release=dev-1738835404736,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=a933e810bcb84917bdcfb7488323db1d\' '
-  +' -H \'content-type: application/json;charset=UTF-8\' '
-  +' -b \'_clck=19i332h|1|ftt|0; wr_fp=813316764; wr_pf=0; wr_useHorizonReader=0; wr_vid=917243444; wr_rt=web%40n6skqK5Lkz_r9sCnvj3_AL; wr_localvid=92a32810836ac063492a86f; wr_name=%C2%A0; wr_avatar=https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FOcM3yyOe0qGkN6o1E9CdsLtKzJFk5sjBLAKtKjZsc8ejfHSWu4xC3WPthibRoJdZVia6j8bgpMKUMBoiaR0HicCl4nsAuVSTHxRxTYKxu8NBBFI%2F132; wr_gender=0; wr_skey=gMy6hMdJ; wr_gid=292659964\' '
-  +' -H \'dnt: 1\' '
-  +' -H \'origin: https://weread.qq.com\' '
-  +' -H \'priority: u=1, i\' '
-  +' -H \'referer: https://weread.qq.com/web/reader/a57325c05c8ed3a57224187k3fe32cd0313c3fe94a00ac6\' '
-  +' -H \'sec-ch-ua: "Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"\' '
-  +' -H \'sec-ch-ua-mobile: ?0\' '
-  +' -H \'sec-ch-ua-platform: "Windows"\' '
-  +' -H \'sec-fetch-dest: empty\' '
-  +' -H \'sec-fetch-mode: cors\' '
-  +' -H \'sec-fetch-site: same-origin\' '
-  +' -H \'sec-gpc: 1\' '
-  +' -H \'sentry-trace: a933e810bcb84917bdcfb7488323db1d-9b666a64aa41aac9\' '
-  +' -H \'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36\' '
-  +' --data-raw \'{"appId":"wb182564874663h1964571299","b":"a57325c05c8ed3a57224187","c":"3fe32cd0313c3fe94a00ac6","ci":316,"co":338,"sm":"第314章杨涟(1)天启四年(1624)","pr":100,"rt":9,"ts":1741939163852,"rn":889,"sg":"d2d73b99e3fcba8d0c3bea6ab4ebc2de9de6f4e79b423d9994196781ff05ad7e","ct":1741939163,"ps":"b13323b07a61fcfbg011ec6","pc":"e5932cd07a61fcfbg013cfd","s":"88ee39ee"}\'').group(1)
-    new_data = eval(data_str)  # 注意eval有安全风险，可考虑使用json.loads替代并确保数据格式正确
-    data.update(new_data)
-except:
-    print("无法正确解析curl命令中的data部分，使用默认配置")
 
 headers, cookies = convert(curl_str) if curl_str else (headers, cookies)
