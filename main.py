@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 # 定义常量，使代码更清晰易读
 COOKIE_DATA = {"rq": "%2Fweb%2Fbook%2Fread"}
 READ_URL = "https://weread.qq.com/web/book/read"
-RENEW_URL = "https://weread.qq.com/web/login/renewal"
 
 
 def encode_data(data):
@@ -51,31 +50,6 @@ def cal_hash(input_string):
     return hex(hash_value_1 + hash_value_2)[2:].lower()
 
 
-def get_wr_skey():
-    try:
-        logger.info(f"请求获取wr_skey的headers: {headers}")
-        logger.info(f"请求获取wr_skey的cookies: {cookies}")
-        response = requests.post(
-            RENEW_URL,
-            headers=headers,
-            cookies=cookies,
-            data=json.dumps(COOKIE_DATA, separators=(',', ':')),
-            timeout=10
-        )
-        response.raise_for_status()  # 检查请求是否成功，失败则抛出异常
-        logger.info(f"获取wr_skey的响应状态码: {response.status_code}")
-        logger.info(f"获取wr_skey的响应头: {response.headers}")
-        for cookie in response.headers.get('Set-Cookie', '').split(';'):
-            if "wr_skey" in cookie:
-                return cookie.split('=')[-1][:8]
-        logger.warning("未在响应中找到wr_skey，响应头信息: %s", response.headers)
-        return None
-    except requests.RequestException as e:
-        logger.error("获取wr_skey时请求失败: %s", e)
-        logger.error(f"请求URL: {RENEW_URL}, 请求头: {headers}, 请求cookies: {cookies}, 请求数据: {COOKIE_DATA}")
-        return None
-
-
 index = 1
 retry_count = 0
 max_retry = 3
@@ -103,18 +77,11 @@ while index <= READ_NUM:
             logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
             retry_count = 0
         else:
-            logging.warning("❌ cookie 已过期，尝试刷新...")
-            new_skey = get_wr_skey()
-            if new_skey:
-                cookies['wr_skey'] = new_skey
-                logging.info(f"✅ 密钥刷新成功，新密钥：{new_skey}")
-                logging.info(f"🔄 重新本次阅读。")
-            else:
-                error_msg = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
-                logging.error(error_msg)
-                if PUSH_METHOD not in (None, ''):
-                    push(error_msg, PUSH_METHOD)
-                raise Exception(error_msg)
+            error_msg = "❌ cookie 已过期或请求数据有误，终止运行。"
+            logging.error(error_msg)
+            if PUSH_METHOD not in (None, ''):
+                push(error_msg, PUSH_METHOD)
+            raise Exception(error_msg)
     except requests.RequestException as e:
         logger.error(f"阅读请求失败: {e}，请求URL: {READ_URL}，请求头: {headers}，请求cookies: {cookies}，请求数据: {data}，正在重试...")
         retry_count += 1
