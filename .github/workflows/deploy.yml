@@ -1,16 +1,13 @@
-##############################
-### 微信读书自动化工作流
-##############################
 name: WeRead Auto
 
 on:
   schedule:
-    - cron: '0 22 * * *'    # 每天22:00（北京时间）
-    - cron: '0 5 * * *'     # 每天5:00
-    - cron: '40 11 * * *'   # 每天11:40
+    - cron: '0 22 * * *'    # 北京时间22:00
+    - cron: '0 5 * * *'     # 北京时间5:00
+    - cron: '40 11 * * *'   # 北京时间11:40
     - cron: '0 17 * * 6,7'  # 周末17:00（周六/日）
     - cron: '0 8 * * 1'     # 周一8:00
-    timezone: Asia/Shanghai
+  timezone: Asia/Shanghai  # ✅ 修正位置：移至schedule列表同级
 
   workflow_dispatch:
     inputs:
@@ -36,7 +33,7 @@ jobs:
     - name: 📦 安装依赖
       run: pip install requests==2.32.3
 
-    - name: ⏳ 随机延迟机制
+    - name: ⏳ 随机延迟
       if: github.event_name == 'schedule' && github.event.inputs.mode != 'manual'
       run: |
         if [ $(date +%u) -eq 1 ] && [ $(date +%H) -eq 8 ]; then
@@ -47,7 +44,7 @@ jobs:
         echo "随机延迟 ${DELAY} 分钟"
         sleep ${DELAY}m
 
-    - name: 🎲 每周随机跳过
+    - name: 🎲 周随机跳过
       if: github.event_name == 'schedule' && github.event.inputs.mode == 'auto'
       run: |
         if [ $(date +%u) -eq 1 ] && [ $(date +%H) -eq 8 ]; then
@@ -58,7 +55,7 @@ jobs:
         fi
 
     - name: 🕒 生成阅读时长
-      id: generate-time
+      id: time-generator
       run: |
         MODE="${{ github.event.inputs.mode }}"
         if [[ "$MODE" == "manual" ]]; then
@@ -91,7 +88,7 @@ jobs:
         fi
         echo "read_time=$NUM" >> $GITHUB_OUTPUT
 
-    - name: 📤 上传结果
-      if: steps.generate-time.outputs.read_time != '0'
+    - name: 📤 结果输出
+      if: steps.time-generator.outputs.read_time != '0'
       run: |
-        echo "✅ 最终生成的阅读时长：${{ steps.generate-time.outputs.read_time }}秒"
+        echo "✅ 最终阅读时长：${{ steps.time-generator.outputs.read_time }}秒"
