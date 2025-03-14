@@ -24,19 +24,19 @@ curl_str = os.getenv('WXREAD_CURL_BASH')
 # headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
     'RK': 'oxEY1bTnXf',
-    'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',
-    'pac_uid': '0_e63870bcecc18',
+    'ptcz': '53e3b35a9486dd63c4d06430b05aa169402117fc407dc5cc9329b41e59f62e2b',  
+    'pac_uid': '0_e63870bcecc18',  
     'iip': '0',
     '_qimei_uuid42': '183070d3135100ee797b08bc922054dc3062834291',
-    'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FeEOpSbFh2Mb1bUxMW9Y3FRPfXwWvOLaNlsjWIkcKeeNg6vlVS5kOVuhNKGQ1M8zaggLqMPmpE5qIUdqEXlQgYg%2F132',
-    'wr_gender': '0',
+    'wr_avatar': 'https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FeEOpSbFh2Mb1bUxMW9Y3FRPfXwWvOLaNlsjWIkcKeeNg6vlVS5kOVuhNKGQ1M8zaggLqMPmpE5qIUdqEXlQgYg%2F132',  
+    'wr_gender': '0',  
 }
 
 headers = {
     'accept': 'application/json, text/plain, */*',
-    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ko;q=0.5',
-    'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
+    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ko;q=0.5',  
+    'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',  
+    'user-agent': 'sentry-environment=production,sentry-release=dev-1738835404736,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=d9923b9398aa484e9ec4f6b78148f0e8' \,  
 }
 
 
@@ -45,19 +45,19 @@ headers = {
 """
 data = {
     "appId": "wb182564874663h1964571299",
-    "b": "a57325c05c8ed3a57224187",
-    "c": "3fe32cd0313c3fe94a00ac6",
-    "ci": 316,
-    "co": 338,
-    "sm": "第314章杨涟(1)天启四年(1624)",
-    "pr": 100,
-    "rt": 9,
-    "ts": 1741939163852,
-    "rn": 889,
-    "sg": "d2d73b99e3fcba8d0c3bea6ab4ebc2de9de6f4e79b423d9994196781ff05ad7e",
-    "ct": 1741939163,
-    "ps": "b13323b07a61fcfbg011ec6",
-    "pc": "e5932cd07a61fcfbg013cfd",
+    "b": "a57325c05c8ed3a57224187",  
+    "c": "5b832ac0313d5b8add2af21",  
+    "ci": 317,  
+    "co": 338,  
+    "sm": "第315章杨涟(2)杨涟没有，所以不行。",
+    "pr": 100,  
+    "rt": 10,  
+    "ts": 1741940943046,  
+    "rn": 53,  
+    "sg": "d79625180dfe7f45008a4f7376c3efef636c212ce00759ff788d729d9b56aa43",  
+    "ct": 1741940943,  
+    "ps": "d00325f07a61fdacg019a69",  
+    "pc": "3e8322307a61fdadg011215",  
 }
 
 
@@ -75,14 +75,14 @@ def convert(curl_command):
     
     # 从 -H 'Cookie: xxx' 提取
     cookie_header = next((v for k, v in headers_temp.items() 
-                         if k.lower() == 'cookie'), '')
+                         if k.lower() == 'cookie'), '')  
     
     # 从 -b 'xxx' 提取
     cookie_b = re.search(r"-b '([^']+)'", curl_command)
     cookie_string = cookie_b.group(1) if cookie_b else cookie_header
     
     # 解析 cookie 字符串
-    if cookie_string:
+    if cookie_string:  
         for cookie in cookie_string.split('; '):
             if '=' in cookie:
                 key, value = cookie.split('=', 1)
