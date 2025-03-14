@@ -77,23 +77,31 @@ data = {
 
 def convert(curl_command):
     try:
-        # 尝试将字符串转换为字节串再转回字符串，可能有助于处理特殊字符
-        curl_command = str(curl_command.encode('utf-8').decode('utf-8'))
+        logger.info(f"原始的 curl_command: {curl_command}")
+        # 去除非ASCII字符
+        curl_command = ''.join([c if ord(c) < 128 else '' for c in curl_command])
+        logger.info(f"处理后的 curl_command: {curl_command}")
 
         headers_temp = {}
         cookies_temp = {}
 
-        # 提取headers
-        header_matches = re.findall(r'-H \'([^:]+): ([^']+)\'', curl_command)
-        for header in header_matches:
-            headers_temp[header[0]] = header[1]
-
-        # 提取cookies
-        all_cookie_matches = re.findall(r'(?:-b \'|; )([^;]+?)\'', curl_command)
-        for cookie in all_cookie_matches:
-            parts = cookie.split('=')
-            if len(parts) == 2:
-                cookies_temp[parts[0].strip()] = parts[1].strip()
+        parts = curl_command.split()
+        i = 0
+        while i < len(parts):
+            if parts[i] == '-H':
+                header = parts[i + 1].strip("'")
+                key, value = header.split(':', 1)
+                headers_temp[key] = value.strip()
+                i += 2
+            elif parts[i] == '-b':
+                cookie_str = parts[i + 1].strip("'")
+                for cookie in cookie_str.split('; '):
+                    if '=' in cookie:
+                        key, value = cookie.split('=', 1)
+                        cookies_temp[key.strip()] = value.strip()
+                i += 2
+            else:
+                i += 1
 
         # 合并并更新全局的headers和cookies
         headers.update(headers_temp)
@@ -103,8 +111,11 @@ def convert(curl_command):
     except re.error as e:
         logger.error(f"正则表达式解析错误: {e}，curl_command: {curl_command}")
         raise
-    except UnicodeDecodeError as e:
-        logger.error(f"字符解码错误: {e}，curl_command: {curl_command}")
+    except IndexError as e:
+        logger.error(f"索引错误: {e}，curl_command: {curl_command}")
+        raise
+    except ValueError as e:
+        logger.error(f"值错误: {e}，curl_command: {curl_command}")
         raise
 
 
