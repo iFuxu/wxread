@@ -77,10 +77,8 @@ data = {
 
 def convert(curl_command):
     try:
-        logger.info(f"原始的 curl_command: {curl_command}")
-        # 尝试去除一些可能影响的特殊字符（可根据实际情况调整）
-        curl_command = curl_command.replace('\\', '')
-        logger.info(f"处理后的 curl_command: {curl_command}")
+        # 尝试将字符串转换为字节串再转回字符串，可能有助于处理特殊字符
+        curl_command = str(curl_command.encode('utf-8').decode('utf-8'))
 
         headers_temp = {}
         cookies_temp = {}
@@ -104,6 +102,9 @@ def convert(curl_command):
         return headers, cookies
     except re.error as e:
         logger.error(f"正则表达式解析错误: {e}，curl_command: {curl_command}")
+        raise
+    except UnicodeDecodeError as e:
+        logger.error(f"字符解码错误: {e}，curl_command: {curl_command}")
         raise
 
 
