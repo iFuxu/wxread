@@ -49,7 +49,7 @@ cookies = {
 headers = {
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ko;q=0.5',
-    'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',
+    'baggage':'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
 }
 
@@ -80,34 +80,36 @@ def convert(curl_command):
     :param curl_command: curl命令字符串
     :return: 提取到的headers和cookies字典
     """
-    # 提取 headers
     headers_temp = {}
-    for match in re.findall(r"-H '([^:]+): ([^']+)'", curl_command):
-        headers_temp[match[0]] = match[1]
+    cookies_temp = {}
 
-    # 提取 cookies
-    cookies = {}
+    # 提取headers
+    header_matches = re.findall(r'-H \'([^:]+): ([^']+)\'', curl_command)
+    for header in header_matches:
+        headers_temp[header[0]] = header[1]
 
-    # 从 -H 'Cookie: xxx' 提取
-    cookie_header = next((v for k, v in headers_temp.items()
-                          if k.lower() == 'cookie'), '')
-
-    # 从 -b 'xxx' 提取
-    cookie_b = re.search(r"-b '([^']+)'", curl_command)
-    cookie_string = cookie_b.group(1) if cookie_b else cookie_header
-
-    # 解析 cookie 字符串
-    if cookie_string:
-        for cookie in cookie_string.split('; '):
+    # 提取cookies
+    cookie_match = re.search(r'-b \'([^']+)\'', curl_command)
+    if cookie_match:
+        cookie_str = cookie_match.group(1)
+        for cookie in cookie_str.split('; '):
             if '=' in cookie:
                 key, value = cookie.split('=', 1)
-                cookies[key.strip()] = value.strip()
+                cookies_temp[key.strip()] = value.strip()
 
-    # 移除 headers 中的 Cookie/cookie
-    headers = {k: v for k, v in headers_temp.items()
-               if k.lower() != 'cookie'}
+    # 合并并更新全局的headers和cookies
+    headers.update(headers_temp)
+    cookies.update(cookies_temp)
 
     return headers, cookies
 
 
-headers, cookies = convert(curl_str) if curl_str else (headers, cookies)
+if curl_str:
+    headers, cookies = convert(curl_str)
+else:
+    logger.warning("未获取到WXREAD_CURL_BASH，使用默认的headers和cookies")
+
+# 打印提取后的headers和cookies，用于调试
+logger.info("提取后的headers: %s", headers)
+logger.info("提取后的cookies: %s", cookies)
+
