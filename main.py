@@ -38,17 +38,17 @@ def cal_hash(input_string):
     :param input_string: 待计算哈希值的字符串
     :return: 计算得到的哈希值（十六进制字符串形式）
     """
-    _7032f5 = 0x15051505
-    _cc1055 = _7032f5
+    hash_value_1 = 0x15051505
+    hash_value_2 = hash_value_1
     length = len(input_string)
-    _19094e = length - 1
+    string_index = length - 1
 
-    while _19094e > 0:
-        _7032f5 = 0x7fffffff & (_7032f5 ^ ord(input_string[_19094e]) << (length - _19094e) % 30)
-        _cc1055 = 0x7fffffff & (_cc1055 ^ ord(input_string[_19094e - 1]) << _19094e % 30)
-        _19094e -= 2
+    while string_index > 0:
+        hash_value_1 = 0x7fffffff & (hash_value_1 ^ ord(input_string[string_index]) << (length - string_index) % 30)
+        hash_value_2 = 0x7fffffff & (hash_value_2 ^ ord(input_string[string_index - 1]) << string_index % 30)
+        string_index -= 2
 
-    return hex(_7032f5 + _cc1055)[2:].lower()
+    return hex(hash_value_1 + hash_value_2)[2:].lower()
 
 
 def get_wr_skey():
@@ -74,6 +74,7 @@ def get_wr_skey():
         return None
     except requests.RequestException as e:
         logger.error("获取wr_skey时请求失败: %s", e)
+        logger.error(f"请求URL: {RENEW_URL}, 请求头: {headers}, 请求cookies: {cookies}, 请求数据: {COOKIE_DATA}")
         return None
 
 
@@ -98,7 +99,7 @@ while index <= READ_NUM:
         response.raise_for_status()
         resData = response.json()
 
-        if 'succ' in resData:
+        if'succ' in resData:
             index += 1
             time.sleep(30)
             logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
@@ -117,8 +118,7 @@ while index <= READ_NUM:
                     push(error_msg, PUSH_METHOD)
                 raise Exception(error_msg)
     except requests.RequestException as e:
-        # 详细记录请求异常信息，包括请求的URL和参数等（如果有）
-        logger.error(f"阅读请求失败: {e}，请求URL: {READ_URL}，请求参数: {data}，正在重试...")
+        logger.error(f"阅读请求失败: {e}，请求URL: {READ_URL}，请求头: {headers}，请求cookies: {cookies}，请求数据: {data}，正在重试...")
         retry_count += 1
         if retry_count >= max_retry:
             logging.error(f"达到最大重试次数 {max_retry}，放弃本次阅读请求。")
@@ -126,7 +126,6 @@ while index <= READ_NUM:
         time.sleep(5)
         continue
     except json.JSONDecodeError as e:
-        # 记录解析JSON响应失败的详细信息，包括响应内容（如果有）
         try:
             response_text = response.text if response else "无响应内容"
             logger.error(f"解析阅读响应失败: {e}，响应内容: {response_text}，正在重试...")
@@ -146,3 +145,4 @@ logging.info("🎉 阅读脚本已完成！")
 if PUSH_METHOD not in (None, ''):
     logging.info("⏱️ 开始推送...")
     push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)
+
