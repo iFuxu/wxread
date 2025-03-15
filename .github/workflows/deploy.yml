@@ -47,11 +47,7 @@ jobs:
         echo "DNS 配置成功"
         echo "🌐 DNS 配置结束"
     - name: 检出仓库
-      run: |
-        echo "📦 检出仓库开始"
-        uses: actions/checkout@v4
-        echo "仓库检出成功"
-        echo "📦 检出仓库结束"
+      uses: actions/checkout@v4
     - name: 缓存依赖
       uses: actions/cache@v3
       with:
@@ -60,13 +56,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: 设置 Python 版本
-      run: |
-        echo "🐍 设置 Python 版本开始"
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-        echo "Python 版本设置成功"
-        echo "🐍 设置 Python 版本结束"
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
     - name: 安装依赖
       run: |
         echo "📥 安装依赖开始"
@@ -104,7 +96,7 @@ jobs:
           # 工作日任务，阅读时间约 3.3 小时，有 30 分钟的浮动范围
           NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))
           NUM=$((NUM * 2))  # 转换为程序所需的单位
-          echo "工作日阅读任务，阅读时间范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"
+          echo "工作日阅读任务，阅读时间范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"  
         fi
         # 输出最终的 READ_NUM 值及其等效的分钟数
         echo "最终 READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
