@@ -20,7 +20,7 @@ TELEGRAM_CHAT_ID = "" or os.getenv("TELEGRAM_CHAT_ID")
 # wxpusher推送时需填
 WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
 # read接口的bash命令，本地部署时可对应替换headers、cookies
-curl_str = os.getenv('WXREAD_CURL_BASH')
+curl_str = os.getenv('WXREAD_CURL_BASH')  
 
 # headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
@@ -33,7 +33,7 @@ cookies = {
     'wr_gender': '0',
 }
 
-headers = {
+headers = {  
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ko;q=0.5',
     'baggage': 'sentry-environment=production,sentry-release=dev-1730698697208,sentry-public_key=ed67ed71f7804a038e898ba54bd66e44,sentry-trace_id=1ff5a0725f8841088b42f97109c45862',
@@ -45,9 +45,9 @@ headers = {
 建议保留区域|默认读三体，其它书籍自行测试时间是否增加
 """
 # 指定列表
-b_values = [
+b_values = [  
     "32c322d072aadd6432c59a9",
-    "4be320905b94534becfd24b",
+    "4be320905b94534becfd24b",  
     "d2c324d0723f69d6d2c98ec",
     "0ca32480813ab749cg016f04",
     "de1326c0813ab9641g0144d7",
@@ -57,28 +57,28 @@ b_values = [
     "50c32b70813ab8d2fg014d8a",
     "659320e0813ab990eg01339d",
     "390325d072479672390034f",
-    "63432f80813ab7c0eg015a06",
-    "54c32470813ab9779g019d78",
+    "63432f80813ab7c0eg015a06",  
+    "54c32470813ab9779g019d78",  
     "ef432b305dd664ef447bcb5",
     "0143250071c626730142037",
 ]
 
 random_b_value = random.choice(b_values)
 data = {
-    "appId": "wb182564874663h152492176",
-    "b": random_b_value,  # 从指定列表中随机选择
-    "c": "7cb321502467cbbc409e62d",
-    "ci": 70,
-    "co": 0,
-    "sm": "[插图]第三部广播纪元7年，程心艾AA说",
-    "pr": 74,
-    "rt": 30,
-    "ts": 1727660516749,
-    "rn": 31,
-    "sg": "991118cc229871a5442993ecb08b5d2844d7f001dbad9a9bc7b2ecf73dc8db7e",
-    "ct": 1727660516,
-    "ps": "b1d32a307a4c3259g016b67",
-    "pc": "080327b07a4c3259g018787",
+  "appId": "wb182564874663h1964571299",  
+  "b": "3a8321c0813ab7839g011bd5",
+  "c": "70e32fb021170efdf2eca12",
+  "ci": 17,
+  "co": 13469,
+  "sm": "庶尤，是诸般殃祸。穆王总告诸侯，叹息说：",
+  "pr": 9,
+  "rt": 126,
+  "ts": 1742027233690,
+  "rn": 317,
+  "sg": "d9afa54067a7ffbfed59d6fc64728f1eddbde8cfad2bcf729e70d768e8394c26",
+  "ct": 1742027233,
+  "ps": "034326407a621e1cg019da8",
+  "pc": "f5632d507a621e1dg0105aa",  
 }
 
 
