@@ -2,17 +2,31 @@ name: wxread
 
 on:
   schedule:
-    - cron: '00 14 * * *'         # 北京22:00
-    - cron: '0 21 * * *'          # 北京5:00
-    - cron: '40 3 * * *'          # 北京11:40
-    - cron: '0 9 * * sat,sun'     # 周末17:00
-    - cron: '0 0 * * 1'           # 周一8:00
+    - cron: '0 21 * * *'  # 北京5:00左右开始
+    - cron: '40 3 * * *'  # 北京11:40左右开始
+    - cron: '00 14 * * *' # 北京21:30 - 22:00左右开始
+    - cron: '0 9 * * sat' # 周六随机阅读
+    - cron: '0 9 * * sun' # 周日随机阅读
   workflow_dispatch:
     inputs:
       mode:
         description: '运行模式 (auto/manual)'
         required: false
-        默认: 'auto'
+        default: 'auto'
+
+env:
+  DNS_SERVER_1: 8.8.8.8
+  DNS_SERVER_2: 8.8.4.4
+  PYTHON_VERSION: '3.10'
+  CERTIFI_VERSION: 2024.8.30
+  CHARSET_NORMALIZER_VERSION: 3.4.0
+  IDNA_VERSION: 3.10
+  REQUESTS_VERSION: 2.32.3
+  URLLIB3_VERSION: 2.2.3
+  BASE_MINUTES: $((3 * 60 + 30))
+  FLOAT_MINUTES: 30
+  WEEKEND_MIN: 90
+  WEEKEND_MAX: 190
 
 jobs:
   deploy:
@@ -22,41 +36,40 @@ jobs:
     steps:
     - name: 🔧 设置DNS
       run: |
-        echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-        echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+        echo "nameserver $DNS_SERVER_1" | sudo tee /etc/resolv.conf
+        echo "nameserver $DNS_SERVER_2" | sudo tee -a /etc/resolv.conf
         echo "✅ DNS配置完成"
 
     - name: 📥 检出仓库
       uses: actions/checkout@v4
 
-    - name: 🐍 设置Python 3.10
+    - name: 缓存依赖
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: 🐍 设置Python $PYTHON_VERSION
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: $PYTHON_VERSION
 
     - name: 📦 安装依赖
       run: |
         python -m pip install --upgrade pip
-        pip install certifi==2024.8.30 charset-normalizer==3.4.0 idna==3.10 requests==2.32.3 urllib3==2.2.3
-        echo "✅ 依赖安装验证：$(pip list | grep requests)"
+        pip install certifi==$CERTIFI_VERSION charset-normalizer==$CHARSET_NORMALIZER_VERSION idna==$IDNA_VERSION requests==$REQUESTS_VERSION urllib3==$URLLIB3_VERSION
+        echo "✅ 依赖安装完成，已安装的依赖版本如下："
+        pip list
 
     - name: ⏱️ 随机延迟
+      if: github.event_name == 'schedule'
       run: |
-        DELAY=$((RANDOM % 21))  
+        DELAY=$((RANDOM % 31))  # 0 - 30 分钟随机延迟
         echo "生成的随机延迟：${DELAY}分钟"
         sleep $((DELAY * 60))
         echo "延迟执行完成"
-
-    - name: 🎲 周随机检查
-      if: github.event_name == 'schedule' && github.event.schedule == '0 0 * * 1'
-      run: |
-        CHECK=$((RANDOM % 7))
-        echo "随机数：$CHECK (需要等于0)"
-        if [ $CHECK -ne 0 ]; then
-          echo "⏭️ 跳过周随机任务"
-          exit 0
-        fi
-        echo "🎉 触发周随机任务"
 
     - name: 🔢 生成READ_NUM
       run: |
@@ -67,34 +80,19 @@ jobs:
         echo "定时规则: ${{ github.event.schedule }}"
 
         if [[ "${{ github.event.inputs.mode }}" == "manual" ]]; then
-          # 手动模式
-          NUM=$((RANDOM % 91 + 90))
-          echo "🕹️ 手动模式 | 范围: 90-180 (45-90分钟)"
-        else
-          # 获取触发规则
-          SCHEDULE="${{ github.event.schedule }}"
+          # 手动模式无延迟
+          DELAY=0
+        fi
 
-          case "$SCHEDULE" in
-            '0 21 * * *')
-              NUM=$((RANDOM % 61 + 90))   # 45-75分钟
-              echo "🌅 早间任务 | 范围: 90-150" ;;
-            '40 3 * * *')
-              NUM=$((RANDOM % 61 + 120))  # 60-90分钟
-              echo "🌞 午间任务 | 范围: 120-180" ;;
-            '00 14 * * *')
-              NUM=$((RANDOM % 61 + 120))  # 60-90分钟
-              echo "🌙 晚间任务 | 范围: 120-180" ;;
-            '0 9 * * sat,sun')
-              NUM=$((RANDOM % 61 + 120))  # 60-90分钟
-              echo "🎉 周末任务 | 范围: 120-180" ;;
-            '0 0 * * 1')
-              NUM=$((RANDOM % 121 + 120)) # 60-120分钟
-              echo "🎰 周随机任务 | 范围: 120-240" ;;
-            *)
-              # 安全模式：生成默认值
-              NUM=$((RANDOM % 61 + 120))
-              echo "⚠️ 未知触发类型 | 启用安全默认值: 120-180" ;;
-          esac
+        if [[ "${{ github.event_name }}" == "schedule" && ( "${{ github.event.schedule }}" == "0 9 * * sat" || "${{ github.event.schedule }}" == "0 9 * * sun" ) ]]; then
+          # 周六或周日随机阅读45 - 95分钟
+          NUM=$((RANDOM % ($WEEKEND_MAX - $WEEKEND_MIN + 1) + $WEEKEND_MIN))
+          echo "🎉 周末随机任务 | 范围: $((WEEKEND_MIN / 2)) - $((WEEKEND_MAX / 2)) 分钟"
+        else
+          # 工作日每天大约3.3小时，有30分钟浮动
+          NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))
+          NUM=$((NUM * 2))  # 转换为程序所需的单位
+          echo "📅 工作日任务 | 范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"
         fi
 
         # 输出结果
@@ -105,6 +103,7 @@ jobs:
       env:
         WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
       run: |
+        set -e
         echo "=== 执行参数 ==="
         echo "READ_NUM: ${{ env.READ_NUM }}"
-        python main.py
+        python main.py || { echo "执行主程序时发生错误"; exit 1; }    
