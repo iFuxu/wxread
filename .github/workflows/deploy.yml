@@ -90,7 +90,7 @@ jobs:
           echo "🎉 周末随机任务 | 范围: $((WEEKEND_MIN / 2)) - $((WEEKEND_MAX / 2)) 分钟"
         else
           # 工作日每天大约3.3小时，有30分钟浮动
-          NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))
+          NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))  
           NUM=$((NUM * 2))  # 转换为程序所需的单位
           echo "📅 工作日任务 | 范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"
         fi
