@@ -8,7 +8,7 @@ import hashlib
 import requests
 import urllib.parse
 from push import push
-from config import data, headers, cookies, READ_NUM, PUSH_METHOD
+from config import headers, cookies, READ_NUM, PUSH_METHOD  
 
 # 配置日志格式
 logger = logging.getLogger(__name__)
@@ -20,6 +20,15 @@ COOKIE_DATA = {"rq": "%2Fweb%2Fbook%2Fread"}
 READ_URL = "https://weread.qq.com/web/book/read"
 RENEW_URL = "https://weread.qq.com/web/login/renewal"
 
+# Initialize data as a dictionary
+data = {
+    "appId": "wb182564874663h1964571299",
+    "b": "3a8321c0813ab7839g011bd5",
+    "c": "c7432af0210c74d97b01b1c",
+    "ci": 16,
+    "co": 14704,
+    "sm": "按：周家仁厚立国，规模已定，惟商民犹伺隙"
+}
 
 def encode_data(data):
     """数据编码"""
@@ -86,4 +95,4 @@ logging.info("🎉 阅读脚本已完成！")
 
 if PUSH_METHOD not in (None, ''):
     logging.info("⏱️ 开始推送...")
-    push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)
+    push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)  
