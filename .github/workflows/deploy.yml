@@ -41,17 +41,17 @@ jobs:
     steps:
     - name: 设置 DNS
       run: |
-        echo "------------------------ DNS 配置开始 ------------------------"
+        echo "🌐 DNS 配置开始"
         echo "nameserver $DNS_SERVER_1" | sudo tee /etc/resolv.conf
         echo "nameserver $DNS_SERVER_2" | sudo tee -a /etc/resolv.conf
         echo "DNS 配置成功"
-        echo "------------------------ DNS 配置结束 ------------------------"
+        echo "🌐 DNS 配置结束"
     - name: 检出仓库
       run: |
-        echo "------------------------ 检出仓库开始 ------------------------"
+        echo "📦 检出仓库开始"
         uses: actions/checkout@v4
         echo "仓库检出成功"
-        echo "------------------------ 检出仓库结束 ------------------------"
+        echo "📦 检出仓库结束"
     - name: 缓存依赖
       uses: actions/cache@v3
       with:
@@ -61,32 +61,32 @@ jobs:
           ${{ runner.os }}-pip-
     - name: 设置 Python 版本
       run: |
-        echo "------------------------ 设置 Python 版本开始 ------------------------"
+        echo "🐍 设置 Python 版本开始"
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
         echo "Python 版本设置成功"
-        echo "------------------------ 设置 Python 版本结束 ------------------------"
+        echo "🐍 设置 Python 版本结束"
     - name: 安装依赖
       run: |
-        echo "------------------------ 安装依赖开始 ------------------------"
+        echo "📥 安装依赖开始"
         python -m pip install --upgrade pip
         pip install certifi==$CERTIFI_VERSION charset-normalizer==$CHARSET_NORMALIZER_VERSION idna==$IDNA_VERSION requests==$REQUESTS_VERSION urllib3==$URLLIB3_VERSION
         echo "依赖安装完成，已安装的依赖版本如下："
         pip list
-        echo "------------------------ 安装依赖结束 ------------------------"
+        echo "📥 安装依赖结束"
     - name: 随机延迟
       if: github.event_name == 'schedule'
       run: |
-        echo "------------------------ 随机延迟开始 ------------------------"
+        echo "⏳ 随机延迟开始"
         DELAY=$((RANDOM % 21))  # 生成 0 - 20 分钟的随机延迟时间
         echo "随机延迟时间: ${DELAY} 分钟"
         sleep $((DELAY * 60))
         echo "延迟结束，开始后续任务"
-        echo "------------------------ 随机延迟结束 ------------------------"
+        echo "⏳ 随机延迟结束"
     - name: 生成 READ_NUM
       run: |
-        echo "------------------------ 生成 READ_NUM 开始 ------------------------"
+        echo "📊 生成 READ_NUM 开始"
         # 输出触发事件的相关信息
         echo "=== 触发事件详情 ==="
         echo "事件类型: ${{ github.event_name }}"
@@ -109,12 +109,12 @@ jobs:
         # 输出最终的 READ_NUM 值及其等效的分钟数
         echo "最终 READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
-        echo "------------------------ 生成 READ_NUM 结束 ------------------------"
+        echo "📊 生成 READ_NUM 结束"
     - name: 执行主程序
       env:
         WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
       run: |
-        echo "------------------------ 执行主程序开始 ------------------------"
+        echo "🚀 执行主程序开始"
         set -e
         echo "=== 执行参数 ==="
         echo "READ_NUM: ${{ env.READ_NUM }}"
@@ -128,4 +128,4 @@ jobs:
           sleep $PAUSE_DURATION
         done
         python main.py || { echo "执行主程序时发生错误"; exit 1; }
-        echo "------------------------ 执行主程序结束 ------------------------"    
+        echo "🚀 执行主程序结束"    
