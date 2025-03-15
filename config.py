@@ -44,21 +44,18 @@ headers = {
 建议保留区域|默认读三体，其它书籍自行测试时间是否增加
 """
 data = {
-    "appId": "wb182564874663h152492176",
-    "b": "ce032b305a9bc1ce0b0dd2a",
-    "c": "7cb321502467cbbc409e62d",
-    "ci": 70,
-    "co": 0,
-    "sm": "[插图]第三部广播纪元7年，程心艾AA说",
-    "pr": 74,
-    "rt": 30,
-    "ts": 1727660516749,
-    "rn": 31,
-    "sg": "991118cc229871a5442993ecb08b5d2844d7f001dbad9a9bc7b2ecf73dc8db7e",
-    "ct": 1727660516,
-    "ps": "b1d32a307a4c3259g016b67",
-    "pc": "080327b07a4c3259g018787",
-}
+    "appId":"wb182564874663h1964571299",  
+        "b":"3a8321c0813ab7839g011bd5",
+        "c":"c7432af0210c74d97b01b1c",
+        "ci":16,"co":14704,
+        "sm":"按：周家仁厚立国，规模已定，惟商民犹伺隙",
+        "pr":0,"rt":9,"ts":1742019929869,
+        "rn":401,
+        "sg":"36ba83886f1cb5ebbca0120a79e8954dec72ab8b029126cfa6e6abfb878a0205",              
+        "ct":1742019929,
+        "ps":"6c832b107a621c87g01145f",
+        "pc":"fdc325e07a621c87g0129cc"
+}      
 
 
 def convert(curl_command):
@@ -75,7 +72,7 @@ def convert(curl_command):
     
     # 从 -H 'Cookie: xxx' 提取
     cookie_header = next((v for k, v in headers_temp.items() 
-                         if k.lower() == 'cookie'), '')
+                         if k.lower() == 'cookie'), '')  
     
     # 从 -b 'xxx' 提取
     cookie_b = re.search(r"-b '([^']+)'", curl_command)
