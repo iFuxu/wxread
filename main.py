@@ -68,6 +68,12 @@ while index <= READ_NUM:
         time.sleep(30)
         logging.info(f"✅ 阅读成功，阅读进度：{(index - 1) * 0.5} 分钟")
 
+        # 随机决定是否暂停
+        if random.random() < 0.3:  # 30% 的概率暂停
+            pause_duration = random.randint(1, 3)  # 随机暂停 1 - 3 分钟
+            logging.info(f"暂停阅读，持续 {pause_duration} 分钟")
+            time.sleep(pause_duration * 60)
+
     else:
         logging.warning("❌ cookie 已过期，尝试刷新...")
         new_skey = get_wr_skey()
@@ -87,3 +93,4 @@ logging.info("🎉 阅读脚本已完成！")
 if PUSH_METHOD not in (None, ''):
     logging.info("⏱️ 开始推送...")
     push(f"🎉 老微信已完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)
+    
