@@ -17,7 +17,7 @@ on:
 env:
   DNS_SERVER_1: 8.8.8.8
   DNS_SERVER_2: 8.8.4.4
-  PYTHON_VERSION: '3.10'  # 定义环境变量
+  PYTHON_VERSION: '3.10'
   CERTIFI_VERSION: 2024.8.30
   CHARSET_NORMALIZER_VERSION: 3.4.0
   IDNA_VERSION: 3.10
@@ -48,13 +48,13 @@ jobs:
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-        restore-keys: |  
+        restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: 🐍 设置Python $PYTHON_VERSION  
+    - name: 🐍 设置Python $PYTHON_VERSION
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}  # 修正引用方式
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: 📦 安装依赖
       run: |
@@ -64,7 +64,7 @@ jobs:
         pip list
 
     - name: ⏱️ 随机延迟
-      if: github.event_name == 'schedule'  
+      if: github.event_name == 'schedule'
       run: |
         DELAY=$((RANDOM % 31))  # 0 - 30 分钟随机延迟
         echo "生成的随机延迟：${DELAY}分钟"
@@ -76,7 +76,7 @@ jobs:
         # 调试信息
         echo "=== 触发事件分析 ==="
         echo "事件类型: ${{ github.event_name }}"
-        echo "输入模式: ${{ github.event.inputs.mode }}"  
+        echo "输入模式: ${{ github.event.inputs.mode }}"
         echo "定时规则: ${{ github.event.schedule }}"
 
         if [[ "${{ github.event.inputs.mode }}" == "manual" ]]; then
@@ -96,7 +96,7 @@ jobs:
         fi
 
         # 输出结果
-        echo "✅ 最终READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"  
+        echo "✅ 最终READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
 
     - name: 🚀 执行主程序
