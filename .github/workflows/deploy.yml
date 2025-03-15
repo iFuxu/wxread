@@ -90,17 +90,17 @@ jobs:
         fi
         if [[ "${{ github.event_name }}" == "schedule" && ( "${{ github.event.schedule }}" == "0 9 * * sat" || "${{ github.event.schedule }}" == "0 9 * * sun" ) ]]; then
           # 周六或周日执行随机阅读任务，阅读时间为 45 - 95 分钟
-          NUM=$((RANDOM % ($WEEKEND_MAX - $WEEKEND_MIN + 1) + $WEEKEND_MIN))
+          READ_NUM=$((RANDOM % ($WEEKEND_MAX - $WEEKEND_MIN + 1) + $WEEKEND_MIN))
           echo "周末随机阅读任务，阅读时间范围: $((WEEKEND_MIN / 2)) - $((WEEKEND_MAX / 2)) 分钟"
         else
           # 工作日任务，阅读时间约 3.3 小时，有 30 分钟的浮动范围
-          NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))
-          NUM=$((NUM * 2))  # 转换为程序所需的单位
-          echo "工作日阅读任务，阅读时间范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"  
+          READ_NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))
+          READ_NUM=$((READ_NUM * 2))  # 转换为程序所需的单位
+          echo "工作日阅读任务，阅读时间范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"
         fi
         # 输出最终的 READ_NUM 值及其等效的分钟数
-        echo "最终 READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
-        echo "READ_NUM=$NUM" >> $GITHUB_ENV
+        echo "最终 READ_NUM: $READ_NUM (等效 $((READ_NUM / 2)) 分钟)"
+        echo "READ_NUM=$READ_NUM" >> $GITHUB_ENV
         echo "📊 生成 READ_NUM 结束"
     - name: 执行主程序
       env:
@@ -113,11 +113,31 @@ jobs:
         # 生成随机暂停次数，不超过 5 次
         PAUSE_TIMES=$((RANDOM % 6))
         echo "随机暂停次数: $PAUSE_TIMES"
-        for ((i = 0; i < PAUSE_TIMES; i++)); do
-          # 每次暂停 0.5 - 3 分钟，转换为秒
-          PAUSE_DURATION=$((RANDOM % 25 + 30))
-          echo "第 $((i + 1)) 次暂停，暂停时长: $((PAUSE_DURATION / 60)) 分钟 $((PAUSE_DURATION % 60)) 秒"
-          sleep $PAUSE_DURATION
-        done
+        if [ $PAUSE_TIMES -gt 0 ]; then
+          # 计算主程序执行次数，假设每次执行一个固定小任务，这里简化处理
+          TOTAL_TASKS=$READ_NUM
+          # 计算可暂停的任务区间
+          if [ $TOTAL_TASKS -gt 2 ]; then
+            AVAILABLE_TASKS=$((TOTAL_TASKS - 2))
+            # 生成随机暂停的任务位置
+            for ((i = 0; i < PAUSE_TIMES; i++)); do
+              PAUSE_POSITION=$((RANDOM % AVAILABLE_TASKS + 1))
+              # 模拟执行任务到暂停位置
+              for ((j = 0; j < PAUSE_POSITION; j++)); do
+                # 这里可以添加实际的小任务执行代码，暂时用 sleep 模拟
+                sleep 1
+              done  
+              # 每次暂停 0.5 - 3 分钟，转换为秒
+              PAUSE_DURATION=$((RANDOM % 25 + 30))
+              echo "第 $((i + 1)) 次暂停，暂停时长: $((PAUSE_DURATION / 60)) 分钟 $((PAUSE_DURATION % 60)) 秒"
+              sleep $PAUSE_DURATION
+              # 继续执行剩余任务
+              for ((j = PAUSE_POSITION; j < TOTAL_TASKS - 1; j++)); do
+                # 这里可以添加实际的小任务执行代码，暂时用 sleep 模拟
+                sleep 1
+              done
+            done
+          fi
+        fi
         python main.py || { echo "执行主程序时发生错误"; exit 1; }
         echo "🚀 执行主程序结束"    
