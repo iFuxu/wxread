@@ -42,7 +42,7 @@ def cal_hash(input_string):
     length = len(input_string)
     _19094e = length - 1
 
-    while _19094e > 0:
+    while _19094e > 0:  
         _7032f5 = 0x7fffffff & (_7032f5 ^ ord(input_string[_19094e]) << (length - _19094e) % 30)
         _cc1055 = 0x7fffffff & (_cc1055 ^ ord(input_string[_19094e - 1]) << _19094e % 30)
         _19094e -= 2
@@ -51,7 +51,7 @@ def cal_hash(input_string):
 
 
 def get_wr_skey():
-    """刷新cookie密钥"""
+    """刷新cookie密钥"""  
     response = requests.post(RENEW_URL, headers=headers, cookies=cookies,
                              data=json.dumps(COOKIE_DATA, separators=(',', ':')))
     for cookie in response.headers.get('Set-Cookie', '').split(';'):
@@ -66,7 +66,7 @@ while index <= READ_NUM:
     data['ts'] = int(time.time() * 1000)
     data['rn'] = random.randint(0, 1000)
     data['sg'] = hashlib.sha256(f"{data['ts']}{data['rn']}{KEY}".encode()).hexdigest()
-    data['s'] = cal_hash(encode_data(data))
+    data['s'] = cal_hash(encode_data(data))  
 
     logging.info(f"⏱️ 尝试第 {index} 次阅读...")
     response = requests.post(READ_URL, headers=headers, cookies=cookies, data=json.dumps(data, separators=(',', ':')))
@@ -88,11 +88,11 @@ while index <= READ_NUM:
             ERROR_CODE = "❌ 无法获取新密钥或者WXREAD_CURL_BASH配置有误，终止运行。"
             logging.error(ERROR_CODE)
             push(ERROR_CODE, PUSH_METHOD)
-            raise Exception(ERROR_CODE)
+            raise Exception(ERROR_CODE)  
     data.pop('s')
 
 logging.info("🎉 阅读脚本已完成！")
 
 if PUSH_METHOD not in (None, ''):
-    logging.info("⏱️ 开始推送...")
-    push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD)  
+    logging.info("⏱️ 开始推送...")    
+    push(f"🎉 微信读书自动阅读完成！\n⏱️ 阅读时长：{(index - 1) * 0.5}分钟。", PUSH_METHOD) 
