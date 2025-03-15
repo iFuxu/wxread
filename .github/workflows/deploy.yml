@@ -126,7 +126,7 @@ jobs:
               for ((j = 0; j < PAUSE_POSITION; j++)); do
                 # 这里可以添加实际的小任务执行代码，暂时用 sleep 模拟
                 sleep 1
-              done  
+              done
               # 每次暂停 0.5 - 3 分钟，转换为秒
               PAUSE_DURATION=$((RANDOM % 25 + 30))
               echo "第 $((i + 1)) 次暂停，暂停时长: $((PAUSE_DURATION / 60)) 分钟 $((PAUSE_DURATION % 60)) 秒"
