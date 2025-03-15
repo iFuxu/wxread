@@ -1,4 +1,3 @@
-# config.py 自定义配置,包括阅读次数、推送token的填写
 import os
 import re
 
@@ -46,19 +45,24 @@ headers = {
 data = {
     "appId": "wb182564874663h776775553",
     "b": "f623242072a191daf6294db",
-    "c": "17c32d00329e17c276c8288",
-    "ci": 137,
-    "co": 7098,
-    "sm": "其实领导也挺不好当的。”我笑了笑，说",
-    "pr": 55,
-    "rt": 30,
-    "ts": 1739673850629,
-    "rn": 412,
-    "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8",
-    "ct": 1739673850,
-    "ps": "ca5326207a5e8814g01704b",
-    "pc": "f2332e707a5e8814g0181e0",
+    "c": "17c32d00329e17c276c8288"，
+    "ci": 137，
+    "co": 7098，
+    "sm": "其实领导也挺不好当的。”我笑了笑，说"，
+    "pr": 55，
+    "rt": 30，
+    "ts": 1739673850629，
+    "rn": 412，
+    "sg": "41b43c2f8b6b065530e28001b91c6f2ba36e70eb397ca016e891645bf18b27d8"，
+    "ct": 1739673850，
+    "ps": "ca5326207a5e8814g01704b"，
+    "pc": "f2332e707a5e8814g0181e0"，
 }
+
+# 从 GitHub 环境变量中获取 b 的值
+b_value = os.getenv('B_VALUE')
+if b_value:
+    data['b'] = b_value
 
 
 def convert(curl_command):
@@ -75,7 +79,7 @@ def convert(curl_command):
 
     # 从 -H 'Cookie: xxx' 提取
     cookie_header = next((v for k, v in headers_temp.items() 
-                         if k.lower() == 'cookie'), '')
+                         if k.lower() == 'cookie')， '')
 
     # 从 -b 'xxx' 提取
     cookie_b = re.search(r"-b '([^']+)'", curl_command)
@@ -85,7 +89,7 @@ def convert(curl_command):
     if cookie_string:
         for cookie in cookie_string.split('; '):
             if '=' in cookie:
-                key, value = cookie.split('=', 1)
+                key, value = cookie.split('='， 1)
                 cookies[key.strip()] = value.strip()
 
     # 移除 headers 中的 Cookie/cookie
