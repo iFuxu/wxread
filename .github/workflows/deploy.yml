@@ -1,19 +1,23 @@
 name: wxread
 
+# 触发条件
 on:
+  # 定时任务，设置不同时间点触发
   schedule:
-    - cron: '0 21 * * *'  # 北京5:00左右开始
-    - cron: '40 3 * * *'  # 北京11:40左右开始
-    - cron: '00 14 * * *' # 北京21:30 - 22:00左右开始
-    - cron: '0 9 * * sat' # 周六随机阅读
-    - cron: '0 9 * * sun' # 周日随机阅读
+    - cron: '0 21 * * *'  # 北京时间 05:00 左右触发
+    - cron: '40 3 * * *'  # 北京时间 11:40 左右触发
+    - cron: '00 14 * * *' # 北京时间 21:30 - 22:00 左右触发
+    - cron: '0 9 * * sat' # 周六 09:00 触发随机阅读任务
+    - cron: '0 9 * * sun' # 周日 09:00 触发随机阅读任务
+  # 手动触发工作流，可选择运行模式
   workflow_dispatch:
     inputs:
       mode:
-        description: '运行模式 (auto/manual)'
+        description: '运行模式 (auto: 自动模式, manual: 手动模式)'
         required: false
         default: 'auto'
 
+# 环境变量设置
 env:
   DNS_SERVER_1: 8.8.8.8
   DNS_SERVER_2: 8.8.4.4
@@ -28,21 +32,26 @@ env:
   WEEKEND_MIN: 90
   WEEKEND_MAX: 190
 
+# 工作任务
 jobs:
   deploy:
     runs-on: ubuntu-22.04
     environment: AutoRead
 
     steps:
-    - name: 🔧 设置DNS
+    - name: 设置 DNS
       run: |
+        echo "------------------------ DNS 配置开始 ------------------------"
         echo "nameserver $DNS_SERVER_1" | sudo tee /etc/resolv.conf
         echo "nameserver $DNS_SERVER_2" | sudo tee -a /etc/resolv.conf
-        echo "✅ DNS配置完成"
-
-    - name: 📥 检出仓库
-      uses: actions/checkout@v4
-
+        echo "DNS 配置成功"
+        echo "------------------------ DNS 配置结束 ------------------------"
+    - name: 检出仓库
+      run: |
+        echo "------------------------ 检出仓库开始 ------------------------"
+        uses: actions/checkout@v4
+        echo "仓库检出成功"
+        echo "------------------------ 检出仓库结束 ------------------------"
     - name: 缓存依赖
       uses: actions/cache@v3
       with:
@@ -50,60 +59,73 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-
-    - name: 🐍 设置Python $PYTHON_VERSION
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    - name: 📦 安装依赖
+    - name: 设置 Python 版本
       run: |
+        echo "------------------------ 设置 Python 版本开始 ------------------------"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        echo "Python 版本设置成功"
+        echo "------------------------ 设置 Python 版本结束 ------------------------"
+    - name: 安装依赖
+      run: |
+        echo "------------------------ 安装依赖开始 ------------------------"
         python -m pip install --upgrade pip
         pip install certifi==$CERTIFI_VERSION charset-normalizer==$CHARSET_NORMALIZER_VERSION idna==$IDNA_VERSION requests==$REQUESTS_VERSION urllib3==$URLLIB3_VERSION
-        echo "✅ 依赖安装完成，已安装的依赖版本如下："
+        echo "依赖安装完成，已安装的依赖版本如下："
         pip list
-
-    - name: ⏱️ 随机延迟
+        echo "------------------------ 安装依赖结束 ------------------------"
+    - name: 随机延迟
       if: github.event_name == 'schedule'
       run: |
-        DELAY=$((RANDOM % 31))  # 0 - 30 分钟随机延迟
-        echo "生成的随机延迟：${DELAY}分钟"
+        echo "------------------------ 随机延迟开始 ------------------------"
+        DELAY=$((RANDOM % 21))  # 生成 0 - 20 分钟的随机延迟时间
+        echo "随机延迟时间: ${DELAY} 分钟"
         sleep $((DELAY * 60))
-        echo "延迟执行完成"
-
-    - name: 🔢 生成READ_NUM
+        echo "延迟结束，开始后续任务"
+        echo "------------------------ 随机延迟结束 ------------------------"
+    - name: 生成 READ_NUM
       run: |
-        # 调试信息
-        echo "=== 触发事件分析 ==="
+        echo "------------------------ 生成 READ_NUM 开始 ------------------------"
+        # 输出触发事件的相关信息
+        echo "=== 触发事件详情 ==="
         echo "事件类型: ${{ github.event_name }}"
         echo "输入模式: ${{ github.event.inputs.mode }}"
         echo "定时规则: ${{ github.event.schedule }}"
-
         if [[ "${{ github.event.inputs.mode }}" == "manual" ]]; then
-          # 手动模式无延迟
+          # 手动模式下无延迟
           DELAY=0
         fi
-
         if [[ "${{ github.event_name }}" == "schedule" && ( "${{ github.event.schedule }}" == "0 9 * * sat" || "${{ github.event.schedule }}" == "0 9 * * sun" ) ]]; then
-          # 周六或周日随机阅读45 - 95分钟
+          # 周六或周日执行随机阅读任务，阅读时间为 45 - 95 分钟
           NUM=$((RANDOM % ($WEEKEND_MAX - $WEEKEND_MIN + 1) + $WEEKEND_MIN))
-          echo "🎉 周末随机任务 | 范围: $((WEEKEND_MIN / 2)) - $((WEEKEND_MAX / 2)) 分钟"
+          echo "周末随机阅读任务，阅读时间范围: $((WEEKEND_MIN / 2)) - $((WEEKEND_MAX / 2)) 分钟"
         else
-          # 工作日每天大约3.3小时，有30分钟浮动
-          NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))  
+          # 工作日任务，阅读时间约 3.3 小时，有 30 分钟的浮动范围
+          NUM=$((RANDOM % (2 * $FLOAT_MINUTES + 1) + $BASE_MINUTES - $FLOAT_MINUTES))
           NUM=$((NUM * 2))  # 转换为程序所需的单位
-          echo "📅 工作日任务 | 范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"
+          echo "工作日阅读任务，阅读时间范围: $((BASE_MINUTES - FLOAT_MINUTES)) - $((BASE_MINUTES + FLOAT_MINUTES)) 分钟"
         fi
-
-        # 输出结果
-        echo "✅ 最终READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
+        # 输出最终的 READ_NUM 值及其等效的分钟数
+        echo "最终 READ_NUM: $NUM (等效 $((NUM / 2)) 分钟)"
         echo "READ_NUM=$NUM" >> $GITHUB_ENV
-
-    - name: 🚀 执行主程序
+        echo "------------------------ 生成 READ_NUM 结束 ------------------------"
+    - name: 执行主程序
       env:
         WXREAD_CURL_BASH: ${{ secrets.WXREAD_CURL_BASH }}
       run: |
+        echo "------------------------ 执行主程序开始 ------------------------"
         set -e
         echo "=== 执行参数 ==="
         echo "READ_NUM: ${{ env.READ_NUM }}"
-        python main.py || { echo "执行主程序时发生错误"; exit 1; }    
+        # 生成随机暂停次数，不超过 5 次
+        PAUSE_TIMES=$((RANDOM % 6))
+        echo "随机暂停次数: $PAUSE_TIMES"
+        for ((i = 0; i < PAUSE_TIMES; i++)); do
+          # 每次暂停 0.5 - 3 分钟，转换为秒
+          PAUSE_DURATION=$((RANDOM % 25 + 30))
+          echo "第 $((i + 1)) 次暂停，暂停时长: $((PAUSE_DURATION / 60)) 分钟 $((PAUSE_DURATION % 60)) 秒"
+          sleep $PAUSE_DURATION
+        done
+        python main.py || { echo "执行主程序时发生错误"; exit 1; }
+        echo "------------------------ 执行主程序结束 ------------------------"    
