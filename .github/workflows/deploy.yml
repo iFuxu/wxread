@@ -6,7 +6,7 @@ on:
     - cron: '0 21 * * *'          # 北京5:00
     - cron: '40 3 * * *'          # 北京11:40
     - cron: '0 9 * * sat,sun'     # 周末17:00
-    - cron: '0 0 * * 1'           # 周一8:00
+    - cron: '0 0 * * 0'           # 周日8:00  
   workflow_dispatch:
     inputs:
       mode:
@@ -42,7 +42,7 @@ jobs:
 
     - name: ⏱️ 随机延迟
       run: |
-        DELAY=$((RANDOM % 21))
+        DELAY=$((RANDOM % 1))  
         echo "生成的随机延迟：${DELAY}分钟"
         sleep $((DELAY * 60))
         echo "延迟执行完成"
